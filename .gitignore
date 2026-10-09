@@ -1,0 +1,8 @@
+bin/
+obj/
+node_modules/
+.vs/
+*.user
+
+# Local SQLite databases
+App_Data/

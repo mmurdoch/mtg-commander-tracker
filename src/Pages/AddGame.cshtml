@@ -1,0 +1,69 @@
+@page
+@model AddGameModel
+
+<div class="mb-4">
+    <h1 class="h3">Add Game</h1>
+    <p class="text-muted">Enter the game details quickly from your phone.</p>
+</div>
+
+<form method="post" class="row g-3">
+    <div class="col-12 col-md-4">
+        <label class="form-label">Date</label>
+        <input asp-for="Input.Date" class="form-control" type="date" />
+    </div>
+
+    <div class="col-12">
+        <label class="form-label">Participants</label>
+        <div id="participantRows">
+            @for (int i = 0; i < Model.Input.ParticipantInputs.Count; i++)
+            {
+                <div class="card p-3 mb-3">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-sm-4">
+                            <label class="form-label">Player</label>
+                            <select asp-for="Input.ParticipantInputs[@i].PlayerId" class="form-select">
+                                <option value="">Select a person</option>
+                                @foreach (var person in Model.People)
+                                {
+                                    <option value="@person.Id">@person.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-4">
+                            <label class="form-label">Deck</label>
+                            <select asp-for="Input.ParticipantInputs[@i].DeckId" class="form-select">
+                                <option value="">Select a deck</option>
+                                @foreach (var deck in Model.Decks)
+                                {
+                                    <option value="@deck.Id">@deck.DisplayName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-3">
+                            <label class="form-label">Winner</label>
+                            <input type="radio" asp-for="Input.WinnerPlayerId" value="@Model.Input.ParticipantInputs[@i].PlayerId" class="form-check-input" />
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="addParticipant()">Add participant</button>
+    </div>
+
+    <div class="col-12">
+        <label class="form-label">Notes</label>
+        <textarea asp-for="Input.Notes" class="form-control" rows="3"></textarea>
+    </div>
+
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">Save game</button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        function addParticipant() {
+            alert('Participant adding will be available in the next iteration.');
+        }
+    </script>
+}

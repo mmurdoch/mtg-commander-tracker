@@ -1,0 +1,157 @@
+/* SB Admin 2 inspired theme */
+:root {
+    --body-bg: #0f172a;
+    --body-surface: rgba(255, 255, 255, 0.96);
+    --body-surface-strong: #ffffff;
+    --topbar-bg: #0b1a3c;
+    --topbar-border: rgba(255, 255, 255, 0.08);
+    --card-border: rgba(15, 23, 42, 0.08);
+    --card-shadow: 0 0.85rem 2rem rgba(15, 23, 42, 0.18);
+    --text-body: #2d3748;
+    --text-muted: #6b7280;
+    --primary: #4e73df;
+    --primary-dark: #224abe;
+    --success: #1cc88a;
+    --danger: #e74a3b;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: 'Nunito', 'Segoe UI', sans-serif;
+    color: var(--text-body);
+    background: var(--body-bg);
+    background-attachment: fixed;
+}
+
+header.topbar {
+    background: linear-gradient(180deg, #224abe 0%, #1b49aa 100%);
+    border-bottom: 1px solid var(--topbar-border);
+}
+
+header.topbar .navbar-brand {
+    color: #fff !important;
+    letter-spacing: 0.02em;
+}
+
+header.topbar .nav-link {
+    color: rgba(255, 255, 255, 0.84) !important;
+    transition: color 0.15s ease-in-out;
+}
+
+header.topbar .nav-link:hover,
+header.topbar .nav-link:focus {
+    color: #fff !important;
+}
+
+main {
+    min-height: calc(100vh - 80px);
+}
+
+.content-shell {
+    background: var(--body-surface);
+    border: 1px solid var(--card-border);
+    border-radius: 1rem;
+    box-shadow: var(--card-shadow);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.content-shell h1,
+.content-shell h2,
+.content-shell h3,
+.content-shell h4,
+.content-shell h5,
+.content-shell h6 {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.content-shell p,
+.content-shell label,
+.content-shell .form-label,
+.content-shell .text-muted,
+.content-shell td,
+.content-shell th {
+    color: var(--text-body);
+}
+
+.table {
+    background: var(--body-surface);
+}
+
+.table th,
+.table td {
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.table thead th {
+    color: var(--primary);
+    border-bottom: 2px solid rgba(15, 23, 42, 0.12);
+    background-color: #f8f9fc;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f8f9fc;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #eaecf4;
+}
+
+.card {
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 1rem;
+    box-shadow: 0 0.75rem 1.75rem rgba(15, 23, 42, 0.12);
+}
+
+.form-control,
+.form-select {
+    border-radius: 0.45rem;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.18);
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-outline-secondary,
+.btn-outline-primary {
+    border-color: rgba(15, 23, 42, 0.12);
+    color: var(--text-body);
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-primary:hover {
+    background-color: #eaecf4;
+    color: var(--primary);
+}
+
+.alert-secondary {
+    background-color: #f8f9fc;
+    border-color: rgba(15, 23, 42, 0.08);
+    color: var(--text-body);
+}
+
+@media (max-width: 767.98px) {
+    .content-shell {
+        padding: 1.5rem;
+    }
+}
