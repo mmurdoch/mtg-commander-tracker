@@ -1,9 +1,10 @@
 (function () {
-    var input = document.getElementById('ColorFilter');
-    var value = document.getElementById('ColorDataId');
-    var list = document.getElementById('ColorList');
-    var toggle = document.getElementById('ColorToggle');
-    var combo = document.getElementById('ColorCombo');
+    function initCombo(ids) {
+    var input = document.getElementById(ids.filter);
+    var value = document.getElementById(ids.value);
+    var list = document.getElementById(ids.list);
+    var toggle = document.getElementById(ids.toggle);
+    var combo = document.getElementById(ids.combo);
     if (!input || !value || !list || !combo) return;
 
     var items = Array.prototype.slice.call(list.children);
@@ -132,4 +133,9 @@
     combo.addEventListener('focusout', function (event) {
         if (!combo.contains(event.relatedTarget)) revert();
     });
+    }
+
+    initCombo({ combo: 'ColorCombo', filter: 'ColorFilter', value: 'ColorDataId', list: 'ColorList', toggle: 'ColorToggle' });
+    initCombo({ combo: 'OwnerCombo', filter: 'OwnerFilter', value: 'OwnerId', list: 'OwnerList', toggle: 'OwnerToggle' });
+    initCombo({ combo: 'CommanderCombo', filter: 'CommanderFilter', value: 'Commander', list: 'CommanderList', toggle: 'CommanderToggle' });
 })();

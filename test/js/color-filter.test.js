@@ -160,3 +160,33 @@ test('an initial value rendered by the server is preserved', () => {
   assert.equal(ctx.value.value, '13');
   assert.equal(ctx.filter.value, 'Golgari (BG)');
 });
+
+test('the Owner combo box is wired up and matches by name only', () => {
+  const dom = new JSDOM(
+    `<form><div id="OwnerCombo">
+       <input id="OwnerFilter" type="text" role="combobox" value="" />
+       <button type="button" id="OwnerToggle"></button>
+       <input type="hidden" id="OwnerId" name="OwnerId" value="" />
+       <ul id="OwnerList" role="listbox" hidden>
+         <li role="option" data-value="1" data-name="Alice">Alice</li>
+         <li role="option" data-value="2" data-name="Bob">Bob</li>
+       </ul>
+     </div></form>`,
+    { runScripts: 'outside-only' });
+  dom.window.eval(script);
+  const { document } = dom.window;
+  const filter = document.getElementById('OwnerFilter');
+  const list = document.getElementById('OwnerList');
+
+  filter.value = 'bo';
+  filter.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+  assert.equal(list.hidden, false);
+  assert.deepEqual(
+    Array.from(list.children).filter((li) => !li.hidden).map((li) => li.textContent),
+    ['Bob']);
+
+  Array.from(list.children)[1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  assert.equal(filter.value, 'Bob');
+  assert.equal(document.getElementById('OwnerId').value, '2');
+  assert.equal(list.hidden, true);
+});

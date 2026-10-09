@@ -2,6 +2,7 @@
 @model mtg_game_tracker.Pages.AddDeckModel
 @{
     var selectedColor = Model.Colors.FirstOrDefault(c => c.Id == Model.ColorDataId);
+    var selectedOwner = Model.People.FirstOrDefault(p => p.Id == Model.OwnerId);
 }
 
 <div class="mb-4">
@@ -16,19 +17,37 @@
         <span asp-validation-for="Name" class="text-danger"></span>
     </div>
     <div class="col-12 col-md-6">
-        <label class="form-label">Commander</label>
-        <input asp-for="Commander" class="form-control" required />
+        <label class="form-label" for="CommanderFilter">Commander</label>
+        <div id="CommanderCombo" class="position-relative">
+            <div class="input-group">
+                <input type="text" id="CommanderFilter" class="form-control" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="CommanderList" autocomplete="off" placeholder="Select or search commander" value="@Model.Commander" />
+                <button type="button" id="CommanderToggle" class="btn btn-outline-secondary" tabindex="-1" aria-label="Show commanders">&#9662;</button>
+            </div>
+            <input type="hidden" asp-for="Commander" />
+            <ul id="CommanderList" class="list-group position-absolute w-100 shadow" role="listbox" style="max-height: 16rem; overflow-y: auto; z-index: 1000;" hidden>
+                @foreach (var commander in Model.Commanders)
+                {
+                    <li class="list-group-item list-group-item-action" role="option" aria-selected="false" data-value="@commander" data-name="@commander">@commander</li>
+                }
+            </ul>
+        </div>
         <span asp-validation-for="Commander" class="text-danger"></span>
     </div>
     <div class="col-12 col-md-6">
-        <label class="form-label">Owner</label>
-        <select asp-for="OwnerId" class="form-select" required>
-            <option value="" disabled selected>-- Select an owner --</option>
-            @foreach (var person in Model.People)
-            {
-                <option value="@person.Id">@person.Name</option>
-            }
-        </select>
+        <label class="form-label" for="OwnerFilter">Owner</label>
+        <div id="OwnerCombo" class="position-relative">
+            <div class="input-group">
+                <input type="text" id="OwnerFilter" class="form-control" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="OwnerList" autocomplete="off" placeholder="Select or search owner" value="@(selectedOwner?.Name ?? "")" />
+                <button type="button" id="OwnerToggle" class="btn btn-outline-secondary" tabindex="-1" aria-label="Show owners">&#9662;</button>
+            </div>
+            <input type="hidden" asp-for="OwnerId" />
+            <ul id="OwnerList" class="list-group position-absolute w-100 shadow" role="listbox" style="max-height: 16rem; overflow-y: auto; z-index: 1000;" hidden>
+                @foreach (var person in Model.People)
+                {
+                    <li class="list-group-item list-group-item-action" role="option" aria-selected="false" data-value="@person.Id" data-name="@person.Name">@person.Name</li>
+                }
+            </ul>
+        </div>
         <span asp-validation-for="OwnerId" class="text-danger"></span>
     </div>
     <div class="col-12 col-md-6">

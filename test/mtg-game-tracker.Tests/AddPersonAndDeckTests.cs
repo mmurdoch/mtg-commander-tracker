@@ -38,7 +38,7 @@ public class AddPersonAndDeckTests
         var owner = new Person { Name = "Alice" };
         context.People.Add(owner);
         await context.SaveChangesAsync();
-        var model = new AddDeckModel(context);
+        var model = new AddDeckModel(context, new FakeCommanderCatalog());
 
         var result = await model.OnPostAsync("Arcane", "Niv-Mizzet", owner.Id, 1);
 
@@ -61,7 +61,7 @@ public class AddPersonAndDeckTests
         var owner = new Person { Name = "Alice" };
         context.People.Add(owner);
         await context.SaveChangesAsync();
-        var model = new AddDeckModel(context);
+        var model = new AddDeckModel(context, new FakeCommanderCatalog());
 
         var result = await model.OnPostAsync(null, "Niv-Mizzet", owner.Id, 1);
 
@@ -84,7 +84,7 @@ public class AddPersonAndDeckTests
         var owner = new Person { Name = "Alice" };
         context.People.Add(owner);
         await context.SaveChangesAsync();
-        var model = new AddDeckModel(context);
+        var model = new AddDeckModel(context, new FakeCommanderCatalog());
 
         var result = await model.OnPostAsync("Arcane", commander, owner.Id, 1);
 
@@ -103,7 +103,7 @@ public class AddPersonAndDeckTests
         await using var context = new AppDbContext(options);
         context.People.Add(new Person { Name = "Alice" });
         await context.SaveChangesAsync();
-        var model = new AddDeckModel(context);
+        var model = new AddDeckModel(context, new FakeCommanderCatalog());
 
         var result = await model.OnPostAsync("Arcane", "Niv-Mizzet", null, 1);
 
@@ -123,11 +123,26 @@ public class AddPersonAndDeckTests
         await using var context = new AppDbContext(options);
         context.People.AddRange(new Person { Name = "Bob" }, new Person { Name = "Alice" });
         await context.SaveChangesAsync();
-        var model = new AddDeckModel(context);
+        var model = new AddDeckModel(context, new FakeCommanderCatalog());
 
         await model.OnGetAsync();
 
         Assert.Equal(new[] { "Alice", "Bob" }, model.People.Select(p => p.Name));
+    }
+
+    [Fact]
+    public async Task AddDeckPageGetLoadsCommandersFromCatalog()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        await using var context = new AppDbContext(options);
+        var model = new AddDeckModel(context, new FakeCommanderCatalog("Atraxa, Praetors' Voice", "Meren of Clan Nel Toth"));
+
+        await model.OnGetAsync();
+
+        Assert.Equal(new[] { "Atraxa, Praetors' Voice", "Meren of Clan Nel Toth" }, model.Commanders);
     }
 
     [Fact]
@@ -141,7 +156,7 @@ public class AddPersonAndDeckTests
         var owner = new Person { Name = "Alice" };
         context.People.Add(owner);
         await context.SaveChangesAsync();
-        var model = new AddDeckModel(context);
+        var model = new AddDeckModel(context, new FakeCommanderCatalog());
 
         var result = await model.OnPostAsync("Arcane", "Niv-Mizzet", owner.Id, null);
 

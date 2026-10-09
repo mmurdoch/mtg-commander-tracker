@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using mtg_game_tracker.Data;
+using mtg_game_tracker.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
@@ -9,6 +10,13 @@ Directory.CreateDirectory(defaultDbFolder);
 var defaultConnectionString = $"Data Source={Path.Combine(defaultDbFolder, "mtg-games.db")}";
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? defaultConnectionString;
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
+
+builder.Services.AddHttpClient(ScryfallCommanderCatalog.HttpClientName);
+builder.Services.AddSingleton<ICommanderCatalog>(sp => new ScryfallCommanderCatalog(
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient(ScryfallCommanderCatalog.HttpClientName),
+    Path.Combine(defaultDbFolder, "commanders.json"),
+    TimeProvider.System,
+    sp.GetRequiredService<ILogger<ScryfallCommanderCatalog>>()));
 
 var app = builder.Build();
 

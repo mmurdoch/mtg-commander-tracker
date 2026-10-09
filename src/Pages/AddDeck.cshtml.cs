@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using mtg_game_tracker.Data;
 using mtg_game_tracker.Models;
+using mtg_game_tracker.Services;
 using System.ComponentModel.DataAnnotations;
 
 namespace mtg_game_tracker.Pages
@@ -10,14 +11,17 @@ namespace mtg_game_tracker.Pages
     public class AddDeckModel : PageModel
     {
         private readonly AppDbContext _db;
+        private readonly ICommanderCatalog _commanderCatalog;
 
-        public AddDeckModel(AppDbContext db)
+        public AddDeckModel(AppDbContext db, ICommanderCatalog commanderCatalog)
         {
             _db = db;
+            _commanderCatalog = commanderCatalog;
         }
 
         public List<ColorData> Colors { get; set; } = new();
         public List<Person> People { get; set; } = new();
+        public IReadOnlyList<string> Commanders { get; set; } = Array.Empty<string>();
 
         [BindProperty]
         public string? Name { get; set; }
@@ -83,6 +87,7 @@ namespace mtg_game_tracker.Pages
         {
             Colors = await _db.Colors.OrderBy(c => c.Id).ToListAsync();
             People = await _db.People.OrderBy(p => p.Name).ToListAsync();
+            Commanders = await _commanderCatalog.GetCommandersAsync(HttpContext?.RequestAborted ?? default);
         }
     }
 }
