@@ -2,7 +2,7 @@ using mtg_game_tracker.Models;
 
 namespace mtg_game_tracker.Data
 {
-    // Fixed reference data for the 31 possible Commander color identities.
+    // Fixed reference data for the 32 possible Commander color identities (including colorless).
     public static class ColorIdentitySeeder
     {
         public static IReadOnlyList<ColorData> All { get; } = new List<ColorData>
@@ -38,6 +38,22 @@ namespace mtg_game_tracker.Data
             new() { Id = 29, Name = "Ink-Treader", Abbreviation = "RGWU" },
             new() { Id = 30, Name = "Witch-Maw", Abbreviation = "GWUB" },
             new() { Id = 31, Name = "Five Colour", Abbreviation = "WUBRG" },
+            new() { Id = 32, Name = "Colorless", Abbreviation = "C" },
         };
+
+        // Finds the identity for a set of color letters, ignoring order and duplicates; empty means colorless.
+        public static ColorData? Find(string letters)
+        {
+            if (letters.Any(c => !"WUBRGC".Contains(char.ToUpperInvariant(c))))
+            {
+                return null;
+            }
+
+            var wanted = Normalize(letters);
+            return All.FirstOrDefault(c => Normalize(c.Abbreviation) == wanted);
+        }
+
+        private static string Normalize(string letters) =>
+            new(letters.ToUpperInvariant().Where("WUBRG".Contains).Distinct().OrderBy(c => c).ToArray());
     }
 }

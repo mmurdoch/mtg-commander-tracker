@@ -32,7 +32,15 @@ public class AddDeckColorFilterTests : IClassFixture<WebApplicationFactory<Progr
                     options.UseInMemoryDatabase(inMemoryDbName));
 
                 services.RemoveAll<ICommanderCatalog>();
-                services.AddSingleton<ICommanderCatalog>(new FakeCommanderCatalog("Atraxa, Praetors' Voice", "Meren of Clan Nel Toth"));
+                services.AddSingleton<ICommanderCatalog>(
+                    new FakeCommanderCatalog("Atraxa, Praetors' Voice", "Meren of Clan Nel Toth")
+                    {
+                        ColorIdentities =
+                        {
+                            ["Atraxa, Praetors' Voice"] = "WUBG",
+                            ["Meren of Clan Nel Toth"] = "BG",
+                        }
+                    });
             });
         });
     }
@@ -60,33 +68,71 @@ public class AddDeckColorFilterTests : IClassFixture<WebApplicationFactory<Progr
     }
 
     [Fact]
-    public async Task AddDeckPage_RendersColorFilterInputAndScript()
+    public async Task AddDeckPage_CommanderOptionsExposeTheirColorLetters()
     {
         var html = await GetAddDeckHtmlAsync();
 
-        Assert.Matches(new Regex("<input[^>]*id=\"ColorFilter\"[^>]*role=\"combobox\"[^>]*>"), html);
+        Assert.Matches(new Regex("<li[^>]*data-value=\"Meren of Clan Nel Toth\"[^>]*data-colors=\"BG\"[^>]*>"), html);
+        Assert.Matches(new Regex("<li[^>]*data-value=\"Atraxa, Praetors&#x27; Voice\"[^>]*data-colors=\"WUBG\"[^>]*>"), html);
+    }
+
+    [Fact]
+    public async Task AddDeckPage_ColorIdentityIsReadOnlyDisplayNotSelectable()
+    {
+        var html = await GetAddDeckHtmlAsync();
+
+        Assert.Matches(new Regex("<input[^>]*id=\"ColorIdentityDisplay\"[^>]*readonly[^>]*>"), html);
+        Assert.Contains("/js/color-identity.js", html);
+        Assert.DoesNotContain("id=\"ColorFilter\"", html);
+        Assert.DoesNotContain("id=\"ColorList\"", html);
+        Assert.DoesNotContain("name=\"ColorDataId\"", html);
+    }
+
+    [Fact]
+    public async Task AddDeckPage_ColorIdentityDisplayCarriesColorTableForClientSideLookup()
+    {
+        var html = await GetAddDeckHtmlAsync();
+
+        Assert.Matches(new Regex("<input[^>]*id=\"ColorIdentityDisplay\"[^>]*data-colors=\"[^\"]*&quot;abbreviation&quot;:&quot;BG&quot;[^\"]*\"[^>]*>"), html);
+    }
+
+    [Fact]
+    public async Task AddDeckPage_PostWithTwoCommandersCreatesDeckWithCombinedColorIdentity()
+    {
+        int ownerId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var owner = new mtg_game_tracker.Models.Person { Name = "Alice" };
+            db.People.Add(owner);
+            await db.SaveChangesAsync();
+            ownerId = owner.Id;
+        }
+
+        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var token = Regex.Match(await GetAddDeckHtmlAsync(client), "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"");
+        Assert.True(token.Success);
+
+        var response = await client.PostAsync("/AddDeck", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Commander"] = "Atraxa, Praetors' Voice",
+            ["SecondCommander"] = "Meren of Clan Nel Toth",
+            ["OwnerId"] = ownerId.ToString(),
+            ["__RequestVerificationToken"] = token.Groups[1].Value,
+        }));
+
+        Assert.Equal(System.Net.HttpStatusCode.Redirect, response.StatusCode);
+        using var verifyScope = _factory.Services.CreateScope();
+        var deck = await verifyScope.ServiceProvider.GetRequiredService<AppDbContext>().Decks.SingleAsync();
+        Assert.Equal(ColorIdentitySeeder.All.Single(c => c.Name == "Witch-Maw").Id, deck.ColorDataId);
+    }
+
+    [Fact]
+    public async Task AddDeckPage_StillLoadsComboBoxScript()
+    {
+        var html = await GetAddDeckHtmlAsync();
+
         Assert.Contains("/js/color-filter.js", html);
-    }
-
-    [Fact]
-    public async Task AddDeckPage_ColorIdentityIsComboBoxWithHiddenValueAndNoSelect()
-    {
-        var html = await GetAddDeckHtmlAsync();
-
-        Assert.Matches(new Regex("<input[^>]*type=\"hidden\"[^>]*name=\"ColorDataId\"[^>]*>"), html);
-        Assert.Matches(new Regex("<ul[^>]*id=\"ColorList\"[^>]*role=\"listbox\"[^>]*>"), html);
-        Assert.DoesNotContain("<select id=\"ColorDataId\"", html);
-        Assert.DoesNotContain("name=\"ColorDataId\" class=\"form-select\"", html);
-    }
-
-    [Fact]
-    public async Task AddDeckPage_ColorOptionsExposeNameAndAbbreviationForFiltering()
-    {
-        var html = await GetAddDeckHtmlAsync();
-
-        Assert.Matches(
-            new Regex("<li[^>]*data-name=\"Golgari\"[^>]*data-abbreviation=\"BG\"[^>]*>|<li[^>]*data-abbreviation=\"BG\"[^>]*data-name=\"Golgari\"[^>]*>"),
-            html);
     }
 
     [Fact]
@@ -101,6 +147,39 @@ public class AddDeckColorFilterTests : IClassFixture<WebApplicationFactory<Progr
     }
 
     [Fact]
+    public async Task AddDeckPage_SecondCommanderIsOptionalComboBoxWithHiddenValue()
+    {
+        var html = await GetAddDeckHtmlAsync();
+
+        Assert.Matches(new Regex("<input[^>]*id=\"SecondCommanderFilter\"[^>]*role=\"combobox\"[^>]*>"), html);
+        Assert.Matches(new Regex("<input[^>]*type=\"hidden\"[^>]*name=\"SecondCommander\"[^>]*>"), html);
+        Assert.Matches(new Regex("<ul[^>]*id=\"SecondCommanderList\"[^>]*role=\"listbox\"[^>]*>"), html);
+        Assert.Contains("data-value=\"Meren of Clan Nel Toth\"", html.Substring(html.IndexOf("id=\"SecondCommanderList\"", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task AddDeckPage_FieldsAreOrderedNameCommandersColorOwner()
+    {
+        var html = await GetAddDeckHtmlAsync();
+
+        var order = new[] { "id=\"Name\"", "id=\"CommanderFilter\"", "id=\"SecondCommanderFilter\"", "id=\"ColorIdentityDisplay\"", "id=\"OwnerFilter\"" }
+            .Select(marker => html.IndexOf(marker, StringComparison.Ordinal))
+            .ToArray();
+
+        Assert.All(order, index => Assert.True(index >= 0));
+        Assert.Equal(order.OrderBy(i => i), order);
+    }
+
+    [Fact]
+    public async Task AddDeckPage_NameIsFullWidthAndOtherFieldsAreHalfWidth()
+    {
+        var html = await GetAddDeckHtmlAsync();
+
+        Assert.Matches(new Regex("<div class=\"col-12\">\\s*<label[^>]*>Name \\(optional\\)</label>"), html);
+        Assert.Equal(4, Regex.Matches(html, "<div class=\"col-12 col-md-6\">").Count);
+    }
+
+    [Fact]
     public async Task ColorFilterScript_IsServed()
     {
         var client = _factory.CreateClient();
@@ -110,9 +189,9 @@ public class AddDeckColorFilterTests : IClassFixture<WebApplicationFactory<Progr
         response.EnsureSuccessStatusCode();
     }
 
-    private async Task<string> GetAddDeckHtmlAsync()
+    private async Task<string> GetAddDeckHtmlAsync(HttpClient? client = null)
     {
-        var client = _factory.CreateClient();
+        client ??= _factory.CreateClient();
         var response = await client.GetAsync("/AddDeck");
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync();

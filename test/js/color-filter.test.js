@@ -190,3 +190,20 @@ test('the Owner combo box is wired up and matches by name only', () => {
   assert.equal(document.getElementById('OwnerId').value, '2');
   assert.equal(list.hidden, true);
 });
+
+test('committing a selection fires a change event on the hidden value', () => {
+  const ctx = setup();
+  let changes = 0;
+  ctx.value.addEventListener('change', () => { changes += 1; });
+  type(ctx, 'mono');
+  click(ctx, item(ctx, 5));
+  assert.equal(changes, 1);
+});
+
+test('clearing the text box fires a change event on the hidden value', () => {
+  const ctx = setup(13);
+  let changes = 0;
+  ctx.value.addEventListener('change', () => { changes += 1; });
+  type(ctx, '');
+  assert.equal(changes, 1);
+});

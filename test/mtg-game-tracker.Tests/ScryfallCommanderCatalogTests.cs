@@ -49,10 +49,10 @@ public sealed class ScryfallCommanderCatalogTests : IDisposable
     {
         if (request.RequestUri!.AbsolutePath == "/page2")
         {
-            return Json("""{"object":"list","has_more":false,"data":[{"name":"Atraxa, Praetors' Voice"},{"name":"Meren of Clan Nel Toth"}]}""");
+            return Json("""{"object":"list","has_more":false,"data":[{"name":"Atraxa, Praetors' Voice","color_identity":["W","U","B","G"]},{"name":"Meren of Clan Nel Toth","color_identity":["B","G"]}]}""");
         }
 
-        return Json("""{"object":"list","has_more":true,"next_page":"https://api.scryfall.com/page2","data":[{"name":"Niv-Mizzet, Parun"},{"name":"Meren of Clan Nel Toth"}]}""");
+        return Json("""{"object":"list","has_more":true,"next_page":"https://api.scryfall.com/page2","data":[{"name":"Niv-Mizzet, Parun","color_identity":["R","U"]},{"name":"Meren of Clan Nel Toth","color_identity":["B","G"]},{"name":"Kozilek, the Great Distortion","color_identity":[]}]}""");
     }
 
     [Fact]
@@ -63,9 +63,63 @@ public sealed class ScryfallCommanderCatalogTests : IDisposable
         var commanders = await catalog.GetCommandersAsync();
 
         Assert.Equal(
-            new[] { "Atraxa, Praetors' Voice", "Meren of Clan Nel Toth", "Niv-Mizzet, Parun" },
+            new[] { "Atraxa, Praetors' Voice", "Kozilek, the Great Distortion", "Meren of Clan Nel Toth", "Niv-Mizzet, Parun" },
             commanders);
         Assert.Equal(2, _requests.Count);
+    }
+
+    [Fact]
+    public async Task ColorIdentities_MapEachCommanderToWubrgOrderedLettersAndEmptyWhenColorless()
+    {
+        var catalog = CreateCatalog();
+
+        var identities = await catalog.GetColorIdentitiesAsync();
+
+        Assert.Equal("WUBG", identities["Atraxa, Praetors' Voice"]);
+        Assert.Equal("BG", identities["Meren of Clan Nel Toth"]);
+        Assert.Equal("UR", identities["Niv-Mizzet, Parun"]);
+        Assert.Equal("", identities["Kozilek, the Great Distortion"]);
+    }
+
+    [Fact]
+    public async Task ColorIdentities_AreServedFromCacheOnSecondCall()
+    {
+        var catalog = CreateCatalog();
+        await catalog.GetColorIdentitiesAsync();
+        _requests.Clear();
+
+        var identities = await catalog.GetColorIdentitiesAsync();
+
+        Assert.Empty(_requests);
+        Assert.Equal("UR", identities["Niv-Mizzet, Parun"]);
+    }
+
+    [Fact]
+    public async Task CacheFileWithoutColorIdentities_IsRefreshedEvenWhenFresh()
+    {
+        Directory.CreateDirectory(_folder);
+        await File.WriteAllTextAsync(
+            CachePath,
+            """{"FetchedAtUtc":"2026-01-01T11:00:00+00:00","Commanders":["Old Commander"]}""");
+
+        var identities = await CreateCatalog().GetColorIdentitiesAsync();
+
+        Assert.Equal(2, _requests.Count);
+        Assert.Equal("UR", identities["Niv-Mizzet, Parun"]);
+    }
+
+    [Fact]
+    public async Task ApiFailureWithCacheLackingColorIdentities_ReturnsStaleCommandersAndNoColors()
+    {
+        Directory.CreateDirectory(_folder);
+        await File.WriteAllTextAsync(
+            CachePath,
+            """{"FetchedAtUtc":"2026-01-01T11:00:00+00:00","Commanders":["Old Commander"]}""");
+        _respond = _ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        var catalog = CreateCatalog();
+
+        Assert.Equal(new[] { "Old Commander" }, await catalog.GetCommandersAsync());
+        Assert.Empty(await catalog.GetColorIdentitiesAsync());
     }
 
     [Fact]
@@ -107,7 +161,7 @@ public sealed class ScryfallCommanderCatalogTests : IDisposable
         var commanders = await catalog.GetCommandersAsync();
 
         Assert.Empty(_requests);
-        Assert.Equal(3, commanders.Count);
+        Assert.Equal(4, commanders.Count);
     }
 
     [Fact]
@@ -119,7 +173,7 @@ public sealed class ScryfallCommanderCatalogTests : IDisposable
         var commanders = await CreateCatalog().GetCommandersAsync();
 
         Assert.Empty(_requests);
-        Assert.Equal(3, commanders.Count);
+        Assert.Equal(4, commanders.Count);
     }
 
     [Fact]
@@ -147,7 +201,7 @@ public sealed class ScryfallCommanderCatalogTests : IDisposable
 
         var commanders = await catalog.GetCommandersAsync();
 
-        Assert.Equal(3, commanders.Count);
+        Assert.Equal(4, commanders.Count);
     }
 
     [Fact]

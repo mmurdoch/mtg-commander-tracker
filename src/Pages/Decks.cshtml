@@ -23,7 +23,7 @@
         {
             <tr>
                 <td>@deck.Name</td>
-                <td>@deck.Commander</td>
+                <td>@(string.IsNullOrEmpty(deck.SecondCommander) ? deck.Commander : $"{deck.Commander} / {deck.SecondCommander}")</td>
                 <td>@deck.Owner?.Name</td>
                 <td>@(deck.ColorData is null ? "-" : $"{deck.ColorData.Name} ({deck.ColorData.Abbreviation})")</td>
             </tr>

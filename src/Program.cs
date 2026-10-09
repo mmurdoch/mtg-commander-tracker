@@ -25,9 +25,19 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.EnsureCreated();
 
-    if (!context.Colors.Any())
+    // EnsureCreated doesn't alter existing SQLite databases, so add columns introduced later.
+    if (context.Database.IsSqlite() &&
+        !context.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('Decks')").AsEnumerable().Contains("SecondCommander"))
     {
-        context.Colors.AddRange(ColorIdentitySeeder.All);
+        context.Database.ExecuteSqlRaw("ALTER TABLE Decks ADD COLUMN SecondCommander TEXT NULL");
+    }
+
+    // Also adds identities introduced after the database was first seeded (e.g. Colorless).
+    var existingColorIds = context.Colors.Select(c => c.Id).ToHashSet();
+    var missingColors = ColorIdentitySeeder.All.Where(c => !existingColorIds.Contains(c.Id)).ToList();
+    if (missingColors.Count > 0)
+    {
+        context.Colors.AddRange(missingColors);
         context.SaveChanges();
     }
 }

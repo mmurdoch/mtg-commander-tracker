@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using mtg_game_tracker.Data;
 using mtg_game_tracker.Models;
 using mtg_game_tracker.Services;
-using System.ComponentModel.DataAnnotations;
 
 namespace mtg_game_tracker.Pages
 {
@@ -22,6 +21,10 @@ namespace mtg_game_tracker.Pages
         public List<ColorData> Colors { get; set; } = new();
         public List<Person> People { get; set; } = new();
         public IReadOnlyList<string> Commanders { get; set; } = Array.Empty<string>();
+        public IReadOnlyDictionary<string, string> CommanderColors { get; set; } = new Dictionary<string, string>();
+
+        // Derived from the chosen commanders; shown read-only on the page.
+        public ColorData? ColorIdentity { get; set; }
 
         [BindProperty]
         public string? Name { get; set; }
@@ -30,11 +33,10 @@ namespace mtg_game_tracker.Pages
         public string Commander { get; set; } = string.Empty;
 
         [BindProperty]
-        public int? OwnerId { get; set; }
+        public string? SecondCommander { get; set; }
 
         [BindProperty]
-        [Required(ErrorMessage = "Please select a color identity.")]
-        public int? ColorDataId { get; set; }
+        public int? OwnerId { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
@@ -42,16 +44,22 @@ namespace mtg_game_tracker.Pages
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync(string? name = null, string? commander = null, int? ownerId = null, int? colorDataId = null)
+        public async Task<IActionResult> OnPostAsync(string? name = null, string? commander = null, int? ownerId = null, string? secondCommander = null)
         {
             var deckName = name ?? Name;
             var deckCommander = commander ?? Commander;
             var selectedOwnerId = ownerId ?? OwnerId;
-            var selectedColorId = colorDataId ?? ColorDataId;
+            var deckSecondCommander = secondCommander ?? SecondCommander;
+
+            await LoadListsAsync();
 
             if (string.IsNullOrWhiteSpace(deckCommander))
             {
                 ModelState.AddModelError(nameof(Commander), "Commander is required.");
+            }
+            else
+            {
+                ColorIdentity = ResolveColorIdentity(deckCommander, deckSecondCommander);
             }
 
             if (selectedOwnerId is null)
@@ -59,14 +67,8 @@ namespace mtg_game_tracker.Pages
                 ModelState.AddModelError(nameof(OwnerId), "Please select an owner.");
             }
 
-            if (selectedColorId is null)
-            {
-                ModelState.AddModelError(nameof(ColorDataId), "Please select a color identity.");
-            }
-
             if (!ModelState.IsValid)
             {
-                await LoadListsAsync();
                 return Page();
             }
 
@@ -74,8 +76,9 @@ namespace mtg_game_tracker.Pages
             {
                 Name = string.IsNullOrWhiteSpace(deckName) ? null : deckName.Trim(),
                 Commander = deckCommander.Trim(),
+                SecondCommander = string.IsNullOrWhiteSpace(deckSecondCommander) ? null : deckSecondCommander.Trim(),
                 OwnerId = selectedOwnerId!.Value,
-                ColorDataId = selectedColorId!.Value
+                ColorDataId = ColorIdentity!.Id
             });
 
             await _db.SaveChangesAsync();
@@ -83,11 +86,41 @@ namespace mtg_game_tracker.Pages
             return RedirectToPage("/Decks");
         }
 
+        private ColorData? ResolveColorIdentity(string commander, string? secondCommander)
+        {
+            var letters = new List<string>();
+            foreach (var (key, value) in new[] { (nameof(Commander), commander), (nameof(SecondCommander), secondCommander) })
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
+
+                if (!CommanderColors.TryGetValue(value.Trim(), out var colors))
+                {
+                    ModelState.AddModelError(key, $"Could not determine the color identity of '{value.Trim()}'.");
+                    return null;
+                }
+
+                letters.Add(colors);
+            }
+
+            var identity = ColorIdentitySeeder.Find(string.Concat(letters));
+            if (identity is null)
+            {
+                ModelState.AddModelError(nameof(Commander), "Could not determine the color identity.");
+            }
+
+            return identity;
+        }
+
         private async Task LoadListsAsync()
         {
+            var cancellationToken = HttpContext?.RequestAborted ?? default;
             Colors = await _db.Colors.OrderBy(c => c.Id).ToListAsync();
             People = await _db.People.OrderBy(p => p.Name).ToListAsync();
-            Commanders = await _commanderCatalog.GetCommandersAsync(HttpContext?.RequestAborted ?? default);
+            Commanders = await _commanderCatalog.GetCommandersAsync(cancellationToken);
+            CommanderColors = await _commanderCatalog.GetColorIdentitiesAsync(cancellationToken);
         }
     }
 }

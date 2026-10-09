@@ -62,9 +62,14 @@
         close();
     }
 
+    function setValue(newValue) {
+        value.value = newValue;
+        value.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
     function commit(item) {
         if (!item) return;
-        value.value = item.getAttribute('data-value');
+        setValue(item.getAttribute('data-value'));
         committedText = item.textContent.trim();
         input.value = committedText;
         close();
@@ -75,7 +80,7 @@
     }
 
     input.addEventListener('input', function () {
-        if (!input.value.trim()) value.value = '';
+        if (!input.value.trim() && value.value) setValue('');
         items.forEach(function (item) { item.hidden = !matches(item, input.value); });
         var visible = visibleItems();
         if (!visible.length) {
@@ -138,4 +143,5 @@
     initCombo({ combo: 'ColorCombo', filter: 'ColorFilter', value: 'ColorDataId', list: 'ColorList', toggle: 'ColorToggle' });
     initCombo({ combo: 'OwnerCombo', filter: 'OwnerFilter', value: 'OwnerId', list: 'OwnerList', toggle: 'OwnerToggle' });
     initCombo({ combo: 'CommanderCombo', filter: 'CommanderFilter', value: 'Commander', list: 'CommanderList', toggle: 'CommanderToggle' });
+    initCombo({ combo: 'SecondCommanderCombo', filter: 'SecondCommanderFilter', value: 'SecondCommander', list: 'SecondCommanderList', toggle: 'SecondCommanderToggle' });
 })();
