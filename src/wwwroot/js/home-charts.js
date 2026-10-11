@@ -9,7 +9,7 @@
     }
 
     function byWinPercent(a, b) {
-        return percent(b) - percent(a) || b.games - a.games || a.label.localeCompare(b.label);
+        return Math.round(percent(b)) - Math.round(percent(a)) || b.games - a.games || percent(b) - percent(a) || a.label.localeCompare(b.label);
     }
 
     function element(tag, className, text) {
@@ -21,21 +21,30 @@
 
     function render(container, entries, emptyMessage) {
         var bars = container.querySelector('.chart-bars');
+        var players = parseInt(container.getAttribute('data-players'), 10);
         bars.textContent = '';
         if (entries.length === 0) {
             bars.appendChild(element('p', 'text-muted small mb-0', emptyMessage));
             return;
         }
-        entries.forEach(function (entry) {
+        var expected = element('div', 'chart-expected');
+        expected.style.left = (100 / players) + '%';
+        expected.style.gridRow = '1 / span ' + entries.length;
+        bars.appendChild(expected);
+        entries.forEach(function (entry, index) {
             var pct = percent(entry);
             var row = element('div', 'chart-row');
-            row.appendChild(element('span', 'chart-label', entry.label));
-            var track = element('div', 'chart-track');
-            var bar = element('div', 'chart-bar');
+            var label = element('span', 'chart-label', entry.label);
+            label.title = entry.label;
+            row.appendChild(label);
+            row.appendChild(element('div', 'chart-track'));
+            var above = entry.wins * players > entry.games;
+            var bar = element('div', 'chart-bar ' + (above ? 'chart-bar-above' : 'chart-bar-below'));
             bar.style.width = pct + '%';
-            track.appendChild(bar);
-            row.appendChild(track);
+            row.appendChild(bar);
             row.appendChild(element('span', 'chart-value', Math.round(pct) + '% (' + entry.wins + '/' + entry.games + ')'));
+            // Explicit rows let the track and bar overlap in the same grid cell.
+            Array.prototype.forEach.call(row.children, function (item) { item.style.gridRow = String(index + 1); });
             bars.appendChild(row);
         });
     }
