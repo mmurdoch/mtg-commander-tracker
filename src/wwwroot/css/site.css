@@ -155,3 +155,21 @@ main {
         padding: 1.5rem;
     }
 }
+
+.sort-button {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    font-weight: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+th[aria-sort=ascending] .sort-button::after {
+    content: ' \25B2';
+}
+
+th[aria-sort=descending] .sort-button::after {
+    content: ' \25BC';
+}

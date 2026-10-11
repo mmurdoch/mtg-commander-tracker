@@ -56,7 +56,7 @@ public class DecksPageIntegrationTests : IClassFixture<WebApplicationFactory<Pro
         response.EnsureSuccessStatusCode();
         var html = await response.Content.ReadAsStringAsync();
 
-        Assert.Contains("<th>Color Identity</th>", html);
+        Assert.Contains(">Color Identity</button>", html);
         Assert.Contains("<td>Golgari (BG)</td>", html);
         Assert.DoesNotContain("??", html);
     }

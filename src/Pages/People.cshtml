@@ -1,4 +1,5 @@
 @page
+@using System.Globalization
 @model PeopleModel
 
 <div class="mb-4 d-flex justify-content-between align-items-center">
@@ -8,18 +9,29 @@
     <a href="/AddPerson" class="btn btn-primary">Add person</a>
 </div>
 
-<table class="table table-striped table-bordered">
+<table class="table table-striped table-bordered" data-sortable>
     <thead>
         <tr>
-            <th>Name</th>
+            <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="text">Name</button></th>
+            <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="number">2-Player Win %</button></th>
+            <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="number">3-Player Win %</button></th>
+            <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="number">4-Player Win %</button></th>
         </tr>
     </thead>
     <tbody>
         @foreach (var person in Model.People)
         {
             <tr>
-                <td>@person.Name</td>
+                <td>@person.Person.Name</td>
+                @foreach (var record in new[] { person.TwoPlayer, person.ThreePlayer, person.FourPlayer })
+                {
+                    <td data-sort-value="@(record.Percent?.ToString("0.####", CultureInfo.InvariantCulture) ?? "")">@(record.Percent is null ? "-" : $"{record.Percent.Value.ToString("0", CultureInfo.InvariantCulture)}% ({record.Wins}/{record.Games})")</td>
+                }
             </tr>
         }
     </tbody>
 </table>
+
+@section Scripts {
+    <script src="~/js/table-sort.js"></script>
+}

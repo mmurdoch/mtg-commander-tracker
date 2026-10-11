@@ -1,4 +1,5 @@
 @page
+@using System.Globalization
 @model DecksModel
 
 <div class="mb-4 d-flex justify-content-between align-items-center">
@@ -8,24 +9,36 @@
     <a href="/AddDeck" class="btn btn-primary">Add deck</a>
 </div>
 
-<table class="table table-striped table-bordered">
+<table class="table table-striped table-bordered" data-sortable>
     <thead>
         <tr>
-            <th>Name</th>
-            <th>Commander</th>
-            <th>Owner</th>
-            <th>Color Identity</th>
+            <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="text">Name</button></th>
+            <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="text">Commander</button></th>
+            <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="text">Owner</button></th>
+            <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="text">Color Identity</button></th>
+            <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="number">2-Player Win %</button></th>
+            <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="number">3-Player Win %</button></th>
+            <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="number">4-Player Win %</button></th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var deck in Model.Decks)
+        @foreach (var item in Model.Decks)
         {
+            var deck = item.Deck;
             <tr>
                 <td>@deck.Name</td>
                 <td>@(string.IsNullOrEmpty(deck.SecondCommander) ? deck.Commander : $"{deck.Commander} / {deck.SecondCommander}")</td>
                 <td>@deck.Owner?.Name</td>
                 <td>@(deck.ColorData is null ? "-" : $"{deck.ColorData.Name} ({deck.ColorData.Abbreviation})")</td>
+                @foreach (var record in new[] { item.TwoPlayer, item.ThreePlayer, item.FourPlayer })
+                {
+                    <td data-sort-value="@(record.Percent?.ToString("0.####", CultureInfo.InvariantCulture) ?? "")">@(record.Percent is null ? "-" : $"{record.Percent.Value.ToString("0", CultureInfo.InvariantCulture)}% ({record.Wins}/{record.Games})")</td>
+                }
             </tr>
         }
     </tbody>
 </table>
+
+@section Scripts {
+    <script src="~/js/table-sort.js"></script>
+}
