@@ -1,4 +1,5 @@
 @page
+@using mtg_game_tracker.Services
 @model AddGameModel
 
 <div class="mb-4">
@@ -93,6 +94,36 @@
     </div>
 </form>
 
+<section class="mt-5" aria-labelledby="chartsTitle">
+    <h2 class="h4 mb-4" id="chartsTitle">Top win percentages</h2>
+
+    <h3 class="h5">People</h3>
+    <div class="row g-4 mb-5">
+        @foreach (var size in WinCharts.GameSizes.OrderDescending())
+        {
+            <div class="col-12 col-lg-4" data-chart="people" data-players="@size">
+                <h4 class="h6">@size-player win %</h4>
+                <div class="chart-bars"></div>
+            </div>
+        }
+    </div>
+
+    <h3 class="h5">Decks</h3>
+    <div class="row g-4">
+        @foreach (var size in WinCharts.GameSizes.OrderDescending())
+        {
+            <div class="col-12 col-lg-4" data-chart="decks" data-players="@size">
+                <h4 class="h6">@size-player win %</h4>
+                <label class="form-label small mb-1" for="minGames@(size)">Minimum games: <output class="min-games-value">5</output></label>
+                <input type="range" class="form-range min-games-slider" id="minGames@(size)" min="0" max="40" step="1" value="5" />
+                <div class="chart-bars"></div>
+            </div>
+        }
+    </div>
+
+    <script type="application/json" id="home-charts-data">@Json.Serialize(Model.Charts)</script>
+</section>
+
 @* Outside the game form: forms can't nest. *@
 <div class="modal fade" id="newDeckModal" tabindex="-1" aria-labelledby="newDeckTitle" aria-hidden="true" data-commanders-url="@Url.Page("/AddGame", new { handler = "Commanders" })">
     <div class="modal-dialog">
@@ -163,4 +194,5 @@
     <script src="~/js/color-filter.js"></script>
     <script src="~/js/add-game.js"></script>
     <script src="~/js/add-deck-modal.js"></script>
+    <script src="~/js/home-charts.js"></script>
 }
