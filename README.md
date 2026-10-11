@@ -7,7 +7,7 @@ A starter ASP.NET Core Razor Pages app for tracking Commander games locally with
 - Razor Pages web UI for phone-friendly entry
 - SQLite database via Entity Framework Core
 - data model for people, decks, games, participants, and winners
-- basic pages for recent games, add game, people, and decks
+- basic pages for games, add game, people, and decks
 
 ## Run locally
 

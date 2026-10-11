@@ -6,3 +6,6 @@ node_modules/
 
 # Local SQLite databases
 App_Data/
+
+*.csv
+*.xlsx

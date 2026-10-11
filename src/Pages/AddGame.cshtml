@@ -3,13 +3,34 @@
 
 <div class="mb-4">
     <h1 class="h3">Add Game</h1>
-    <p class="text-muted">Enter the game details quickly from your phone.</p>
 </div>
 
 <form method="post" class="row g-3">
     <div class="col-12 col-md-4">
         <label class="form-label">Date</label>
-        <input asp-for="Input.Date" class="form-control" type="date" />
+        <input asp-for="Input.Date" class="form-control game-date" type="date" />
+    </div>
+
+    <div class="col-12 col-md-8">
+        <label class="form-label">Players</label>
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            @foreach (var option in new[] { "2", "3", "4" })
+            {
+                <div class="form-check form-check-inline m-0">
+                    <input type="radio" class="form-check-input player-count-option" id="players-@option" name="Input.PlayerCountOption" value="@option" checked="@(Model.Input.PlayerCountOption == option)" />
+                    <label class="form-check-label" for="players-@option">@option</label>
+                </div>
+            }
+            <div class="form-check form-check-inline m-0">
+                <input type="radio" class="form-check-input player-count-option" id="players-more" name="Input.PlayerCountOption" value="more" checked="@(Model.Input.PlayerCountOption == "more")" />
+                <label class="form-check-label" for="players-more">more</label>
+            </div>
+            <input type="number" id="morePlayerCount" name="Input.MorePlayerCount" class="form-control" style="width: 5rem" min="@AddGameInput.MinMorePlayers" max="@AddGameInput.MaxPlayers" value="@Model.Input.MorePlayerCount" />
+            <div class="form-check m-0">
+                <input asp-for="Input.IsDraw" class="form-check-input draw-checkbox" />
+                <label asp-for="Input.IsDraw" class="form-check-label">Game was a draw</label>
+            </div>
+        </div>
     </div>
 
     <div class="col-12">
@@ -17,53 +38,129 @@
         <div id="participantRows">
             @for (int i = 0; i < Model.Input.ParticipantInputs.Count; i++)
             {
-                <div class="card p-3 mb-3">
+                var participant = Model.Input.ParticipantInputs[i];
+                var selectedPlayer = Model.People.FirstOrDefault(p => p.Id == participant.PlayerId);
+                var selectedDeck = Model.Decks.FirstOrDefault(d => d.Id == participant.DeckId);
+                <div class="card p-3 mb-3 participant-row@(i >= Model.Input.PlayerCount ? " d-none" : "")">
                     <div class="row g-3 align-items-end">
                         <div class="col-12 col-sm-4">
-                            <label class="form-label">Player</label>
-                            <select asp-for="Input.ParticipantInputs[@i].PlayerId" class="form-select">
-                                <option value="">Select a person</option>
-                                @foreach (var person in Model.People)
-                                {
-                                    <option value="@person.Id">@person.Name</option>
-                                }
-                            </select>
+                            <div class="d-flex justify-content-between align-items-baseline mb-2">
+                                <label class="form-label mb-0" for="Deck@(i)Filter">Deck</label>
+                                <button type="button" class="btn btn-link btn-sm p-0 new-deck-btn">+ New deck</button>
+                            </div>
+                            <div data-combo class="position-relative">
+                                <div class="input-group">
+                                    <input type="text" id="Deck@(i)Filter" class="form-control combo-filter" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="Deck@(i)List" autocomplete="off" placeholder="Select or search deck"@(i == 0 && Model.FocusFirstDeck ? " autofocus" : "") value="@(selectedDeck is null ? "" : Model.DeckLabels[selectedDeck.Id])" />
+                                    <button type="button" class="btn btn-outline-secondary combo-toggle" tabindex="-1" aria-label="Show decks">&#9662;</button>
+                                </div>
+                                <input type="hidden" asp-for="Input.ParticipantInputs[i].DeckId" class="combo-value deck-id" />
+                                <ul id="Deck@(i)List" class="list-group position-absolute w-100 shadow combo-list" role="listbox" style="max-height: 16rem; overflow-y: auto; z-index: 1000;" hidden>
+                                    @foreach (var deck in Model.Decks)
+                                    {
+                                        <li class="list-group-item list-group-item-action" role="option" aria-selected="false" data-value="@deck.Id" data-owner-id="@deck.OwnerId" data-name="@Model.DeckLabels[deck.Id]">@Model.DeckLabels[deck.Id]</li>
+                                    }
+                                </ul>
+                            </div>
                         </div>
                         <div class="col-12 col-sm-4">
-                            <label class="form-label">Deck</label>
-                            <select asp-for="Input.ParticipantInputs[@i].DeckId" class="form-select">
-                                <option value="">Select a deck</option>
-                                @foreach (var deck in Model.Decks)
-                                {
-                                    <option value="@deck.Id">@deck.DisplayName</option>
-                                }
-                            </select>
+                            <label class="form-label" for="Player@(i)Filter">Player</label>
+                            <div data-combo class="position-relative">
+                                <div class="input-group">
+                                    <input type="text" id="Player@(i)Filter" class="form-control combo-filter" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="Player@(i)List" autocomplete="off" placeholder="Select or search player" value="@(selectedPlayer?.Name ?? "")" />
+                                    <button type="button" class="btn btn-outline-secondary combo-toggle" tabindex="-1" aria-label="Show players">&#9662;</button>
+                                </div>
+                                <input type="hidden" asp-for="Input.ParticipantInputs[i].PlayerId" class="combo-value player-id" />
+                                <ul id="Player@(i)List" class="list-group position-absolute w-100 shadow combo-list" role="listbox" style="max-height: 16rem; overflow-y: auto; z-index: 1000;" hidden>
+                                    @foreach (var person in Model.People)
+                                    {
+                                        <li class="list-group-item list-group-item-action" role="option" aria-selected="false" data-value="@person.Id" data-name="@person.Name">@person.Name</li>
+                                    }
+                                </ul>
+                            </div>
                         </div>
                         <div class="col-12 col-sm-3">
                             <label class="form-label">Winner</label>
-                            <input type="radio" asp-for="Input.WinnerPlayerId" value="@Model.Input.ParticipantInputs[@i].PlayerId" class="form-check-input" />
+                            <input type="radio" asp-for="Input.WinnerPlayerId" value="@(participant.PlayerId ?? 0)" class="form-check-input winner-radio" />
                         </div>
                     </div>
                 </div>
             }
         </div>
-        <button type="button" class="btn btn-outline-primary" onclick="addParticipant()">Add participant</button>
     </div>
 
     <div class="col-12">
-        <label class="form-label">Notes</label>
-        <textarea asp-for="Input.Notes" class="form-control" rows="3"></textarea>
-    </div>
-
-    <div class="col-12">
-        <button type="submit" class="btn btn-primary">Save game</button>
+        <button type="submit" class="btn btn-primary">Add</button>
     </div>
 </form>
 
+@* Outside the game form: forms can't nest. *@
+<div class="modal fade" id="newDeckModal" tabindex="-1" aria-labelledby="newDeckTitle" aria-hidden="true" data-commanders-url="@Url.Page("/AddGame", new { handler = "Commanders" })">
+    <div class="modal-dialog">
+        <form id="newDeckForm" method="post" asp-page-handler="AddDeck" class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="newDeckTitle">New deck</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body row g-3">
+                <div class="col-12">
+                    <label class="form-label" for="NewDeckName">Name (optional)</label>
+                    <input type="text" id="NewDeckName" name="name" class="form-control" autocomplete="off" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="NewDeckCommanderFilter">Commander</label>
+                    <div data-modal-combo class="position-relative">
+                        <div class="input-group">
+                            <input type="text" id="NewDeckCommanderFilter" class="form-control combo-filter" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="NewDeckCommanderList" autocomplete="off" placeholder="Select or search commander" />
+                            <button type="button" class="btn btn-outline-secondary combo-toggle" tabindex="-1" aria-label="Show commanders">&#9662;</button>
+                        </div>
+                        <input type="hidden" name="commander" class="combo-value" />
+                        <ul id="NewDeckCommanderList" class="list-group position-absolute w-100 shadow combo-list commander-list" role="listbox" style="max-height: 16rem; overflow-y: auto; z-index: 1056;" hidden></ul>
+                    </div>
+                    <span class="text-danger small" data-error-for="Commander"></span>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="NewDeckSecondCommanderFilter">Second Commander (optional)</label>
+                    <div data-modal-combo class="position-relative">
+                        <div class="input-group">
+                            <input type="text" id="NewDeckSecondCommanderFilter" class="form-control combo-filter" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="NewDeckSecondCommanderList" autocomplete="off" placeholder="Select or search second commander" />
+                            <button type="button" class="btn btn-outline-secondary combo-toggle" tabindex="-1" aria-label="Show commanders">&#9662;</button>
+                        </div>
+                        <input type="hidden" name="secondCommander" class="combo-value" />
+                        <ul id="NewDeckSecondCommanderList" class="list-group position-absolute w-100 shadow combo-list commander-list" role="listbox" style="max-height: 16rem; overflow-y: auto; z-index: 1056;" hidden></ul>
+                    </div>
+                    <span class="text-danger small" data-error-for="SecondCommander"></span>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="NewDeckOwnerFilter">Owner</label>
+                    <div data-modal-combo class="position-relative">
+                        <div class="input-group">
+                            <input type="text" id="NewDeckOwnerFilter" class="form-control combo-filter" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="NewDeckOwnerList" autocomplete="off" placeholder="Select or search owner" />
+                            <button type="button" class="btn btn-outline-secondary combo-toggle" tabindex="-1" aria-label="Show owners">&#9662;</button>
+                        </div>
+                        <input type="hidden" name="ownerId" class="combo-value" />
+                        <ul id="NewDeckOwnerList" class="list-group position-absolute w-100 shadow combo-list" role="listbox" style="max-height: 16rem; overflow-y: auto; z-index: 1056;" hidden>
+                            @foreach (var person in Model.People)
+                            {
+                                <li class="list-group-item list-group-item-action" role="option" aria-selected="false" data-value="@person.Id" data-name="@person.Name">@person.Name</li>
+                            }
+                        </ul>
+                    </div>
+                    <span class="text-danger small" data-error-for="OwnerId"></span>
+                </div>
+                <div class="col-12">
+                    <div class="alert alert-danger mb-0" role="alert" id="newDeckError" hidden></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="newDeckSubmit">Add deck</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @section Scripts {
-    <script>
-        function addParticipant() {
-            alert('Participant adding will be available in the next iteration.');
-        }
-    </script>
+    <script src="~/js/color-filter.js"></script>
+    <script src="~/js/add-game.js"></script>
+    <script src="~/js/add-deck-modal.js"></script>
 }

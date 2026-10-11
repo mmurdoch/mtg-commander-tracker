@@ -1,0 +1,54 @@
+@page
+@model GamesModel
+@{
+    ViewData["Title"] = "Games";
+}
+
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="h3">Games</h1>
+    </div>
+    <a href="/AddGame" class="btn btn-primary">Add game</a>
+</div>
+
+@if (Model.Games.Any())
+{
+    foreach (var game in Model.Games)
+    {
+        <div class="game-card card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>@game.Date.ToString("yyyy-MM-dd")</strong>
+                <div class="d-flex align-items-center gap-2">
+                    @if (game.HasWinner)
+                    {
+                        <span class="text-muted small">@game.Players.Count players</span>
+                    }
+                    else
+                    {
+                        <span class="badge text-bg-secondary">Draw</span>
+                    }
+                    <form method="post" asp-page-handler="Delete" onsubmit="return confirm('Are you sure you want to delete this game?');">
+                        <input type="hidden" name="id" value="@game.Id" />
+                        <button type="submit" class="btn btn-outline-danger btn-sm btn-delete-game">Delete</button>
+                    </form>
+                </div>
+            </div>
+            <ul class="list-group list-group-flush">
+                @foreach (var player in game.Players)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center @(player.IsWinner ? "game-winner list-group-item-success fw-bold" : "")">
+                        <span>@player.DeckName <span class="text-muted fw-normal">&mdash; @player.PersonName</span></span>
+                        @if (player.IsWinner)
+                        {
+                            <span class="badge text-bg-success">Winner</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+}
+else
+{
+    <div class="alert alert-secondary">No games saved yet. Add one from the button above.</div>
+}

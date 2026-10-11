@@ -3,7 +3,7 @@ using mtg_game_tracker.Data;
 using mtg_game_tracker.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options => options.Conventions.AddPageRoute("/AddGame", ""));
 
 var defaultDbFolder = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
 Directory.CreateDirectory(defaultDbFolder);
@@ -30,6 +30,13 @@ using (var scope = app.Services.CreateScope())
         !context.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('Decks')").AsEnumerable().Contains("SecondCommander"))
     {
         context.Database.ExecuteSqlRaw("ALTER TABLE Decks ADD COLUMN SecondCommander TEXT NULL");
+    }
+
+    // Drops the retired Games.Notes column, which would otherwise reject inserts as NOT NULL.
+    if (context.Database.IsSqlite() &&
+        context.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('Games')").AsEnumerable().Contains("Notes"))
+    {
+        context.Database.ExecuteSqlRaw("ALTER TABLE Games DROP COLUMN Notes");
     }
 
     // Also adds identities introduced after the database was first seeded (e.g. Colorless).

@@ -1,13 +1,20 @@
 (function () {
     function initCombo(ids) {
-    var input = document.getElementById(ids.filter);
-    var value = document.getElementById(ids.value);
-    var list = document.getElementById(ids.list);
-    var toggle = document.getElementById(ids.toggle);
-    var combo = document.getElementById(ids.combo);
+        initComboElements(
+            document.getElementById(ids.combo),
+            document.getElementById(ids.filter),
+            document.getElementById(ids.value),
+            document.getElementById(ids.list),
+            document.getElementById(ids.toggle));
+    }
+
+    function initComboElements(combo, input, value, list, toggle) {
     if (!input || !value || !list || !combo) return;
 
-    var items = Array.prototype.slice.call(list.children);
+    // Read live: lists can be rebuilt after this combo is initialised.
+    function allItems() {
+        return Array.prototype.slice.call(list.children);
+    }
     var committedText = value.value ? input.value : '';
     var highlightedIndex = -1;
 
@@ -22,11 +29,11 @@
     }
 
     function visibleItems() {
-        return items.filter(function (item) { return !item.hidden; });
+        return allItems().filter(function (item) { return !item.hidden; });
     }
 
     function highlight(item) {
-        items.forEach(function (candidate) {
+        allItems().forEach(function (candidate) {
             var active = candidate === item;
             candidate.setAttribute('aria-selected', active ? 'true' : 'false');
             candidate.classList.toggle('active', active);
@@ -51,8 +58,8 @@
     }
 
     function showAll() {
-        items.forEach(function (item) { item.hidden = false; });
-        var current = items.filter(function (item) { return item.getAttribute('data-value') === value.value; })[0];
+        allItems().forEach(function (item) { item.hidden = false; });
+        var current = allItems().filter(function (item) { return item.getAttribute('data-value') === value.value; })[0];
         open();
         highlight(current || null);
     }
@@ -75,13 +82,22 @@
         close();
     }
 
+    // Keeps the text box in step when the value, or the selected item's label, is changed from outside.
+    function syncText() {
+        var match = allItems().filter(function (item) { return item.getAttribute('data-value') === value.value; })[0];
+        committedText = match ? match.textContent.trim() : '';
+        input.value = committedText;
+    }
+    value.addEventListener('change', syncText);
+    value.addEventListener('combo:refresh', syncText);
+
     function highlighted() {
         return highlightedIndex >= 0 ? visibleItems()[highlightedIndex] : null;
     }
 
     input.addEventListener('input', function () {
         if (!input.value.trim() && value.value) setValue('');
-        items.forEach(function (item) { item.hidden = !matches(item, input.value); });
+        allItems().forEach(function (item) { item.hidden = !matches(item, input.value); });
         var visible = visibleItems();
         if (!visible.length) {
             close();
@@ -108,6 +124,10 @@
         } else if (event.key === 'Enter' && isOpen()) {
             event.preventDefault();
             commit(highlighted());
+        } else if (event.key === 'Tab' && isOpen()) {
+            // Not prevented: focus still moves on, and the commit keeps focusout from reverting.
+            var target = highlighted();
+            if (target && target.getAttribute('data-value') !== value.value) commit(target);
         } else if (event.key === 'Escape' && isOpen()) {
             event.preventDefault();
             revert();
@@ -136,9 +156,27 @@
     });
 
     combo.addEventListener('focusout', function (event) {
-        if (!combo.contains(event.relatedTarget)) revert();
+        if (combo.contains(event.relatedTarget)) return;
+        var visible = visibleItems();
+        var filtering = isOpen() && input.value.trim() && input.value !== committedText;
+        if (filtering && visible.length === 1) {
+            commit(visible[0]);
+        } else {
+            revert();
+        }
     });
     }
+
+    window.comboBox = { init: initComboElements };
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-combo]'), function (combo) {
+        initComboElements(
+            combo,
+            combo.querySelector('.combo-filter'),
+            combo.querySelector('.combo-value'),
+            combo.querySelector('.combo-list'),
+            combo.querySelector('.combo-toggle'));
+    });
 
     initCombo({ combo: 'ColorCombo', filter: 'ColorFilter', value: 'ColorDataId', list: 'ColorList', toggle: 'ColorToggle' });
     initCombo({ combo: 'OwnerCombo', filter: 'OwnerFilter', value: 'OwnerId', list: 'OwnerList', toggle: 'OwnerToggle' });

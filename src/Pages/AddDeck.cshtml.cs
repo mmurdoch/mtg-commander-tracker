@@ -53,65 +53,22 @@ namespace mtg_game_tracker.Pages
 
             await LoadListsAsync();
 
-            if (string.IsNullOrWhiteSpace(deckCommander))
+            var draft = DeckFactory.Build(deckName, deckCommander, deckSecondCommander, selectedOwnerId, CommanderColors);
+            ColorIdentity = draft.ColorIdentity;
+            foreach (var (key, message) in draft.Errors)
             {
-                ModelState.AddModelError(nameof(Commander), "Commander is required.");
-            }
-            else
-            {
-                ColorIdentity = ResolveColorIdentity(deckCommander, deckSecondCommander);
+                ModelState.AddModelError(key, message);
             }
 
-            if (selectedOwnerId is null)
-            {
-                ModelState.AddModelError(nameof(OwnerId), "Please select an owner.");
-            }
-
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid || draft.Deck is null)
             {
                 return Page();
             }
 
-            _db.Decks.Add(new Deck
-            {
-                Name = string.IsNullOrWhiteSpace(deckName) ? null : deckName.Trim(),
-                Commander = deckCommander.Trim(),
-                SecondCommander = string.IsNullOrWhiteSpace(deckSecondCommander) ? null : deckSecondCommander.Trim(),
-                OwnerId = selectedOwnerId!.Value,
-                ColorDataId = ColorIdentity!.Id
-            });
-
+            _db.Decks.Add(draft.Deck);
             await _db.SaveChangesAsync();
 
             return RedirectToPage("/Decks");
-        }
-
-        private ColorData? ResolveColorIdentity(string commander, string? secondCommander)
-        {
-            var letters = new List<string>();
-            foreach (var (key, value) in new[] { (nameof(Commander), commander), (nameof(SecondCommander), secondCommander) })
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    continue;
-                }
-
-                if (!CommanderColors.TryGetValue(value.Trim(), out var colors))
-                {
-                    ModelState.AddModelError(key, $"Could not determine the color identity of '{value.Trim()}'.");
-                    return null;
-                }
-
-                letters.Add(colors);
-            }
-
-            var identity = ColorIdentitySeeder.Find(string.Concat(letters));
-            if (identity is null)
-            {
-                ModelState.AddModelError(nameof(Commander), "Could not determine the color identity.");
-            }
-
-            return identity;
         }
 
         private async Task LoadListsAsync()

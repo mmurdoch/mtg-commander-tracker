@@ -16,8 +16,7 @@
             </button>
             <div class="collapse navbar-collapse" id="topbarNav">
                 <ul class="navbar-nav ms-auto align-items-lg-center">
-                    <li class="nav-item"><a class="nav-link" href="/">Recent Games</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/AddGame">Add Game</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/Games">Games</a></li>
                     <li class="nav-item"><a class="nav-link" href="/People">People</a></li>
                     <li class="nav-item"><a class="nav-link" href="/Decks">Decks</a></li>
                 </ul>
@@ -26,6 +25,13 @@
     </header>
 
     <main class="container-xl py-4">
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success alert-dismissible" role="status">
+                @successMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
         <div class="content-shell mx-auto px-4 py-4">
             @RenderBody()
         </div>
