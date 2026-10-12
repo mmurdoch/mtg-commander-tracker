@@ -26,8 +26,8 @@
         {
             var deck = item.Deck;
             <tr>
-                <td>@deck.Name</td>
-                <td>@(string.IsNullOrEmpty(deck.SecondCommander) ? deck.Commander : $"{deck.Commander} / {deck.SecondCommander}")</td>
+                <td>@if (!string.IsNullOrEmpty(deck.Name)) {<a asp-page="/DeckMatchups" asp-route-id="@deck.Id">@deck.Name</a>}</td>
+                <td><a asp-page="/DeckMatchups" asp-route-id="@deck.Id">@(string.IsNullOrEmpty(deck.SecondCommander) ? deck.Commander : $"{deck.Commander} / {deck.SecondCommander}")</a></td>
                 <td>@deck.Owner?.Name</td>
                 <td>@(deck.ColorData is null ? "-" : $"{deck.ColorData.Name} ({deck.ColorData.Abbreviation})")</td>
                 @foreach (var record in new[] { item.TwoPlayer, item.ThreePlayer, item.FourPlayer })

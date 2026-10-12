@@ -3,7 +3,7 @@ using mtg_game_tracker.Data;
 
 namespace mtg_game_tracker.Services
 {
-    public record ChartEntry(string Label, int Games, int Wins);
+    public record ChartEntry(string Label, int Games, int Wins, int? DeckId = null);
 
     // Months is the look-back window; null means all time.
     public record ChartTimeframe(string Key, string Label, int? Months);
@@ -84,7 +84,7 @@ namespace mtg_game_tracker.Services
                             .Select(g => new { g.WinnerId, Seat = g.Seats.FirstOrDefault(s => s.DeckId == id) })
                             .Where(x => x.Seat is not null)
                             .ToList();
-                        return new ChartEntry(deckLabels[id], played.Count, played.Count(x => x.WinnerId == x.Seat!.PlayerId));
+                        return new ChartEntry(deckLabels[id], played.Count, played.Count(x => x.WinnerId == x.Seat!.PlayerId), id);
                     })
                     .Where(e => e.Games > 0)
                     .OrderBy(e => e.Label, StringComparer.OrdinalIgnoreCase)

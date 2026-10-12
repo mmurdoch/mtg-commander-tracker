@@ -42,7 +42,7 @@ function setup(chartData = data, others = {}) {
     `<button type="button" data-timeframe="${key}" aria-pressed="${key === 'all'}">${key}</button>`).join('')}</div>`;
   const sliders = [2, 3, 4].map(n =>
     `<div data-chart="decks" data-players="${n}">
-       <input type="range" class="min-games-slider" min="0" max="40" value="5" />
+       <input type="range" class="min-games-slider" min="1" max="40" value="5" />
        <output class="min-games-value">5</output>
        <div class="chart-bars"></div>
      </div>`).join('');
@@ -105,6 +105,20 @@ test('chart labels expose the full name as a hover tooltip', () => {
 
   assert.equal(chart('people', 2).querySelector('.chart-label').title, 'A very long person name');
   assert.equal(chart('decks', 2).querySelector('.chart-label').title, 'A very long commander name (Deck)');
+});
+
+test('deck chart labels link to the deck matchups page', () => {
+  const { chart, document } = setup({
+    people: { 2: [entry('Someone', 1, 1)], 3: [], 4: [] },
+    decks: { 2: [{ label: 'Atraxa', games: 5, wins: 3, deckId: 7 }], 3: [], 4: [] },
+  });
+  chart('decks', 2).setAttribute('data-deck-url', '/DeckMatchups');
+  document.querySelector('[data-timeframe="all"]').click();
+
+  const link = chart('decks', 2).querySelector('a.chart-label');
+  assert.equal(link.getAttribute('href'), '/DeckMatchups?id=7');
+  assert.equal(link.textContent, 'Atraxa');
+  assert.equal(chart('people', 2).querySelector('a.chart-label'), null);
 });
 
 test('people chart sizes bars by win percentage', () => {
@@ -188,10 +202,10 @@ test('deck chart defaults to decks with at least five games and shows the top fi
 test('lowering the slider lets decks with fewer games into the top five', () => {
   const { labels, setSlider, chart } = setup();
 
-  setSlider(2, 0);
+  setSlider(2, 1);
 
   assert.deepEqual(labels('decks', 2), ['C', 'Tiny', 'F', 'B', 'D']);
-  assert.equal(chart('decks', 2).querySelector('.min-games-value').textContent, '0');
+  assert.equal(chart('decks', 2).querySelector('.min-games-value').textContent, '1');
 });
 
 test('raising the slider excludes decks below the minimum', () => {
@@ -243,7 +257,7 @@ test('the minimum games slider applies to the selected timeframe and persists ac
 
   select('1m');
   assert.deepEqual(labels('decks', 2), ['Many']);
-  setSlider(2, 0);
+  setSlider(2, 1);
   assert.deepEqual(labels('decks', 2), ['Few', 'Many']);
   select('all');
 

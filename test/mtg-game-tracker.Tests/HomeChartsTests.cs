@@ -143,6 +143,23 @@ public class HomeChartsTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task Charts_DeckEntriesCarryDeckIdAndHomePageExposesMatchupsUrl()
+    {
+        await SeedAsync();
+
+        var charts = await LoadChartsAsync();
+        int atraxaId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            atraxaId = scope.ServiceProvider.GetRequiredService<AppDbContext>().Decks.Single(d => d.Commander == "Atraxa").Id;
+        }
+        var html = await (await _factory.CreateClient().GetAsync("/")).Content.ReadAsStringAsync();
+
+        Assert.Equal(atraxaId, charts.Decks[2].Single(e => e.Label == "Atraxa").DeckId);
+        Assert.Equal(3, Regex.Matches(html, "data-chart=\"decks\"[^>]*data-deck-url=\"/DeckMatchups\"").Count);
+    }
+
+    [Fact]
     public async Task HomePage_RendersSixChartsAndDeckSlidersWithBounds()
     {
         await SeedAsync();
@@ -161,7 +178,7 @@ public class HomeChartsTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal(3, sliders.Count);
         foreach (Match slider in sliders)
         {
-            Assert.Contains("min=\"0\"", slider.Value);
+            Assert.Contains("min=\"1\"", slider.Value);
             Assert.Contains("max=\"40\"", slider.Value);
             Assert.Contains("value=\"5\"", slider.Value);
         }

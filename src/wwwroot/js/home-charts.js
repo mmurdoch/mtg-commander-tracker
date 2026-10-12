@@ -22,6 +22,7 @@
     function render(container, entries, emptyMessage) {
         var bars = container.querySelector('.chart-bars');
         var players = parseInt(container.getAttribute('data-players'), 10);
+        var deckUrl = container.getAttribute('data-deck-url');
         bars.textContent = '';
         if (entries.length === 0) {
             bars.appendChild(element('p', 'text-muted small mb-0', emptyMessage));
@@ -34,7 +35,9 @@
         entries.forEach(function (entry, index) {
             var pct = percent(entry);
             var row = element('div', 'chart-row');
-            var label = element('span', 'chart-label', entry.label);
+            var linked = deckUrl && entry.deckId != null;
+            var label = element(linked ? 'a' : 'span', 'chart-label', entry.label);
+            if (linked) label.href = deckUrl + '?id=' + entry.deckId;
             label.title = entry.label;
             row.appendChild(label);
             row.appendChild(element('div', 'chart-track'));
