@@ -31,7 +31,15 @@ const data = {
   },
 };
 
-function setup(chartData = data) {
+const emptyCharts = { people: { 2: [], 3: [], 4: [] }, decks: { 2: [], 3: [], 4: [] }, seats: { 2: [], 3: [], 4: [] } };
+const timeframes = ['all', '12m', '6m', '3m', '1m'];
+
+function setup(chartData = data, others = {}) {
+  const payload = {};
+  timeframes.forEach(key => { payload[key] = others[key] || emptyCharts; });
+  payload.all = { ...emptyCharts, ...chartData };
+  const selector = `<div id="timeframe-select">${timeframes.map(key =>
+    `<button type="button" data-timeframe="${key}" aria-pressed="${key === 'all'}">${key}</button>`).join('')}</div>`;
   const sliders = [2, 3, 4].map(n =>
     `<div data-chart="decks" data-players="${n}">
        <input type="range" class="min-games-slider" min="0" max="40" value="5" />
@@ -40,8 +48,10 @@ function setup(chartData = data) {
      </div>`).join('');
   const people = [2, 3, 4].map(n =>
     `<div data-chart="people" data-players="${n}"><div class="chart-bars"></div></div>`).join('');
+  const seatCharts = [2, 3, 4].map(n =>
+    `<div data-chart="seats" data-players="${n}"><div class="chart-bars"></div></div>`).join('');
   const dom = new JSDOM(
-    `<script type="application/json" id="home-charts-data">${JSON.stringify(chartData)}</script>${people}${sliders}`,
+    `<script type="application/json" id="home-charts-data">${JSON.stringify(payload)}</script>${selector}${people}${sliders}${seatCharts}`,
     { runScripts: 'outside-only' });
   dom.window.eval(script);
   const { document } = dom.window;
@@ -56,6 +66,11 @@ function setup(chartData = data) {
       const slider = chart('decks', size).querySelector('input[type="range"]');
       slider.value = String(value);
       slider.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+    },
+    pressed: () => Array.from(document.querySelectorAll('[data-timeframe]'))
+      .filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.getAttribute('data-timeframe')),
+    select(key) {
+      document.querySelector(`[data-timeframe="${key}"]`).click();
     },
   };
 }
@@ -195,6 +210,60 @@ test('deck charts have independent sliders and show a message when nothing quali
 
   assert.deepEqual(labels('decks', 3), ['Only']);
   assert.deepEqual(labels('decks', 2), ['C', 'F', 'B', 'D', 'A']);
+});
+
+test('selecting a timeframe re-renders every chart from that timeframe data and marks it pressed', () => {
+  const { labels, values, pressed, select, chart } = setup(data, {
+    '3m': {
+      people: { 2: [entry('Recent', 3, 2)], 3: [], 4: [entry('Four', 4, 1)] },
+      decks: { 2: [entry('Fresh', 6, 3)], 3: [], 4: [] },
+    },
+  });
+  assert.deepEqual(pressed(), ['all']);
+
+  select('3m');
+
+  assert.deepEqual(pressed(), ['3m']);
+  assert.deepEqual(labels('people', 2), ['Recent']);
+  assert.deepEqual(values('people', 2), ['67% (2/3)']);
+  assert.deepEqual(labels('people', 4), ['Four']);
+  assert.deepEqual(labels('decks', 2), ['Fresh']);
+  assert.match(chart('people', 3).textContent, /No games/);
+
+  select('all');
+
+  assert.deepEqual(pressed(), ['all']);
+  assert.deepEqual(labels('people', 2), ['High', 'Mid', 'Low']);
+});
+
+test('the minimum games slider applies to the selected timeframe and persists across switches', () => {
+  const { labels, setSlider, select } = setup(data, {
+    '1m': { people: { 2: [], 3: [], 4: [] }, decks: { 2: [entry('Few', 2, 2), entry('Many', 7, 3)], 3: [], 4: [] } },
+  });
+
+  select('1m');
+  assert.deepEqual(labels('decks', 2), ['Many']);
+  setSlider(2, 0);
+  assert.deepEqual(labels('decks', 2), ['Few', 'Many']);
+  select('all');
+
+  assert.deepEqual(labels('decks', 2), ['C', 'Tiny', 'F', 'B', 'D']);
+});
+
+test('seat charts list seats in turn order, not by win percentage, and follow the timeframe', () => {
+  const seats = { 2: [entry('First', 10, 3), entry('Second', 10, 7)], 3: [], 4: [] };
+  const { labels, values, select, chart } = setup(
+    { ...emptyCharts, seats },
+    { '3m': { ...emptyCharts, seats: { 2: [entry('First', 4, 4), entry('Second', 4, 0)], 3: [], 4: [] } } });
+
+  assert.deepEqual(labels('seats', 2), ['First', 'Second']);
+  assert.deepEqual(values('seats', 2), ['30% (3/10)', '70% (7/10)']);
+  assert.match(chart('seats', 3).textContent, /No games/);
+  assert.equal(chart('seats', 2).querySelector('.chart-expected').style.left, '50%');
+
+  select('3m');
+
+  assert.deepEqual(values('seats', 2), ['100% (4/4)', '0% (0/4)']);
 });
 
 test('labels are rendered as text, not markup', () => {

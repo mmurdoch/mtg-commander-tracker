@@ -22,7 +22,10 @@ namespace mtg_game_tracker.Pages
         public List<Deck> Decks { get; set; } = new();
         public Dictionary<int, string> DeckLabels { get; private set; } = new();
 
-        public WinCharts Charts { get; private set; } = WinCharts.Empty;
+        public IReadOnlyDictionary<string, WinCharts> ChartsByTimeframe { get; private set; } =
+            WinCharts.Timeframes.ToDictionary(t => t.Key, _ => WinCharts.Empty);
+
+        public WinCharts Charts => ChartsByTimeframe[WinCharts.AllTime];
 
         public bool FocusFirstDeck { get; private set; }
 
@@ -32,7 +35,7 @@ namespace mtg_game_tracker.Pages
         public async Task OnGetAsync()
         {
             await LoadListsAsync();
-            Charts = await WinCharts.LoadAsync(_db, DeckLabels);
+            ChartsByTimeframe = await WinCharts.LoadByTimeframeAsync(_db, DeckLabels, DateTime.Today);
 
             // Carry over the settings of the game just saved; everything else starts blank.
             FocusFirstDeck = TempData.ContainsKey("SuccessMessage");
@@ -65,7 +68,7 @@ namespace mtg_game_tracker.Pages
 
             if (!ModelState.IsValid)
             {
-                Charts = await WinCharts.LoadAsync(_db, DeckLabels);
+                ChartsByTimeframe = await WinCharts.LoadByTimeframeAsync(_db, DeckLabels, DateTime.Today);
                 EnsureParticipantRows();
                 return Page();
             }

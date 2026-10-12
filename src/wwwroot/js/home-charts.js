@@ -49,17 +49,27 @@
         });
     }
 
+    var timeframe = 'all';
+    var refreshers = [];
+
+    function charts() {
+        return data[timeframe];
+    }
+
     Array.prototype.forEach.call(document.querySelectorAll('[data-chart="people"]'), function (container) {
-        var entries = (data.people[container.getAttribute('data-players')] || []).slice().sort(byWinPercent);
-        render(container, entries, 'No games yet.');
+        function update() {
+            var entries = (charts().people[container.getAttribute('data-players')] || []).slice().sort(byWinPercent);
+            render(container, entries, 'No games yet.');
+        }
+        refreshers.push(update);
     });
 
     Array.prototype.forEach.call(document.querySelectorAll('[data-chart="decks"]'), function (container) {
-        var all = data.decks[container.getAttribute('data-players')] || [];
         var slider = container.querySelector('input[type="range"]');
         var output = container.querySelector('.min-games-value');
 
         function update() {
+            var all = charts().decks[container.getAttribute('data-players')] || [];
             var min = parseInt(slider.value, 10);
             output.textContent = String(min);
             var entries = all
@@ -70,6 +80,31 @@
         }
 
         slider.addEventListener('input', update);
-        update();
+        refreshers.push(update);
     });
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-chart="seats"]'), function (container) {
+        function update() {
+            // Seats keep turn order rather than being ranked.
+            render(container, charts().seats[container.getAttribute('data-players')] || [], 'No games yet.');
+        }
+        refreshers.push(update);
+    });
+
+    function refresh() {
+        refreshers.forEach(function (update) { update(); });
+    }
+
+    var buttons = document.querySelectorAll('[data-timeframe]');
+    Array.prototype.forEach.call(buttons, function (button) {
+        button.addEventListener('click', function () {
+            timeframe = button.getAttribute('data-timeframe');
+            Array.prototype.forEach.call(buttons, function (other) {
+                other.setAttribute('aria-pressed', String(other === button));
+            });
+            refresh();
+        });
+    });
+
+    refresh();
 })();

@@ -95,7 +95,15 @@
 </form>
 
 <section class="mt-5" aria-labelledby="chartsTitle">
-    <h2 class="h4 mb-4" id="chartsTitle">Top win percentages</h2>
+    <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+        <h2 class="h4 mb-0" id="chartsTitle">Top win percentages</h2>
+        <div class="timeframe-select" id="timeframe-select" role="group" aria-label="Timeframe">
+            @foreach (var timeframe in WinCharts.Timeframes)
+            {
+                <button type="button" class="timeframe-option" data-timeframe="@timeframe.Key" aria-pressed="@(timeframe.Key == WinCharts.AllTime ? "true" : "false")">@timeframe.Label</button>
+            }
+        </div>
+    </div>
 
     <h3 class="h5">People</h3>
     <div class="row g-4 mb-5">
@@ -109,7 +117,7 @@
     </div>
 
     <h3 class="h5">Decks</h3>
-    <div class="row g-4">
+    <div class="row g-4 mb-5">
         @foreach (var size in WinCharts.GameSizes.OrderDescending())
         {
             <div class="col-12 col-lg-4" data-chart="decks" data-players="@size">
@@ -121,7 +129,18 @@
         }
     </div>
 
-    <script type="application/json" id="home-charts-data">@Json.Serialize(Model.Charts)</script>
+    <h3 class="h5">Seat position</h3>
+    <div class="row g-4">
+        @foreach (var size in WinCharts.GameSizes.OrderDescending())
+        {
+            <div class="col-12 col-lg-4" data-chart="seats" data-players="@size">
+                <h4 class="h6">@size-player win %</h4>
+                <div class="chart-bars"></div>
+            </div>
+        }
+    </div>
+
+    <script type="application/json" id="home-charts-data">@Json.Serialize(Model.ChartsByTimeframe)</script>
 </section>
 
 @* Outside the game form: forms can't nest. *@
