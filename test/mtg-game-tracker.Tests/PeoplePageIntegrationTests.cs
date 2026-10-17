@@ -106,13 +106,35 @@ public class PeoplePageIntegrationTests : IClassFixture<WebApplicationFactory<Pr
     }
 
     [Fact]
-    public async Task OnGet_OrdersPeopleByName()
+    public async Task OnGet_OrdersPeopleByGamesPlayedDescendingThenName()
     {
         await SeedAsync();
 
         var stats = await LoadStatsAsync();
 
         Assert.Equal(new[] { "Alice", "Bob", "Carol", "Dave", "Eve" }, stats.Select(s => s.Person.Name));
+        Assert.Equal(new[] { 6, 6, 3, 2, 1 }, stats.Select(s => s.GamesPlayed));
+    }
+
+    [Fact]
+    public async Task OnGet_OrdersPeopleWithMoreGamesFirst()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var aaron = new Person { Name = "Aaron" };
+            var zed = new Person { Name = "Zed" };
+            db.People.AddRange(aaron, zed);
+            await db.SaveChangesAsync();
+            var game = new Game { Date = new DateTime(2024, 1, 1), WinnerId = zed.Id };
+            game.Participants.Add(new Participant { PlayerId = zed.Id });
+            db.Games.Add(game);
+            await db.SaveChangesAsync();
+        }
+
+        var stats = await LoadStatsAsync();
+
+        Assert.Equal(new[] { "Zed", "Aaron" }, stats.Select(s => s.Person.Name));
     }
 
     [Fact]
@@ -126,6 +148,8 @@ public class PeoplePageIntegrationTests : IClassFixture<WebApplicationFactory<Pr
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Contains("data-sortable", html);
+        Assert.Contains("Games played", html);
+        Assert.Contains("<td data-sort-value=\"6\">6</td>", html);
         Assert.Contains("2-Player Win %", html);
         Assert.Contains("3-Player Win %", html);
         Assert.Contains("4-Player Win %", html);

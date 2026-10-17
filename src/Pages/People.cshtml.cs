@@ -10,7 +10,7 @@ namespace mtg_game_tracker.Pages
         public double? Percent => Games == 0 ? null : (double)Wins / Games * 100;
     }
 
-    public record PersonWinStats(Person Person, WinRecord TwoPlayer, WinRecord ThreePlayer, WinRecord FourPlayer);
+    public record PersonWinStats(Person Person, int GamesPlayed, WinRecord TwoPlayer, WinRecord ThreePlayer, WinRecord FourPlayer);
 
     public class PeopleModel : PageModel
     {
@@ -37,7 +37,12 @@ namespace mtg_game_tracker.Pages
             }
 
             People = people
-                .Select(p => new PersonWinStats(p, RecordFor(p.Id, 2), RecordFor(p.Id, 3), RecordFor(p.Id, 4)))
+                .Select(p => new PersonWinStats(
+                    p,
+                    games.Count(g => g.PlayerIds.Contains(p.Id)),
+                    RecordFor(p.Id, 2), RecordFor(p.Id, 3), RecordFor(p.Id, 4)))
+                .OrderByDescending(s => s.GamesPlayed)
+                .ThenBy(s => s.Person.Name)
                 .ToList();
         }
     }

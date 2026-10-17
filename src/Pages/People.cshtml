@@ -13,6 +13,7 @@
     <thead>
         <tr>
             <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="text">Name</button></th>
+            <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="number">Games played</button></th>
             <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="number">2-Player Win %</button></th>
             <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="number">3-Player Win %</button></th>
             <th aria-sort="none"><button type="button" class="sort-button" data-sort-type="number">4-Player Win %</button></th>
@@ -23,6 +24,7 @@
         {
             <tr>
                 <td>@person.Person.Name</td>
+                <td data-sort-value="@person.GamesPlayed">@person.GamesPlayed</td>
                 @foreach (var record in new[] { person.TwoPlayer, person.ThreePlayer, person.FourPlayer })
                 {
                     <td data-sort-value="@(record.Percent?.ToString("0.####", CultureInfo.InvariantCulture) ?? "")">@(record.Percent is null ? "-" : $"{record.Percent.Value.ToString("0", CultureInfo.InvariantCulture)}% ({record.Wins}/{record.Games})")</td>
