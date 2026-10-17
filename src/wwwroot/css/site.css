@@ -1,14 +1,22 @@
 /* SB Admin 2 inspired theme */
 :root {
+    --bs-border-width: 0;
+    --bs-border-radius: 0;
+    --bs-border-radius-sm: 0;
+    --bs-border-radius-lg: 0;
+    --bs-border-radius-xl: 0;
+    --bs-border-radius-xxl: 0;
+    --bs-border-radius-pill: 0;
     --body-bg: #0f172a;
-    --body-surface: rgba(255, 255, 255, 0.96);
-    --body-surface-strong: #ffffff;
-    --topbar-bg: #0b1a3c;
-    --topbar-border: rgba(255, 255, 255, 0.08);
-    --card-border: rgba(15, 23, 42, 0.08);
-    --card-shadow: 0 0.85rem 2rem rgba(15, 23, 42, 0.18);
-    --text-body: #2d3748;
-    --text-muted: #6b7280;
+    --body-surface: #1e293b;
+    --body-surface-strong: #243247;
+    --body-surface-raised: #334155;
+    --topbar-bg: #05080f;
+    --card-border: rgba(255, 255, 255, 0.1);
+    --card-shadow: 0 0.85rem 2rem rgba(0, 0, 0, 0.45);
+    --text-body: #e2e8f0;
+    --text-muted: #94a3b8;
+    --heading: #8fa8ff;
     --primary: #4e73df;
     --primary-dark: #224abe;
     --success: #1cc88a;
@@ -29,8 +37,7 @@ body {
 }
 
 header.topbar {
-    background: linear-gradient(180deg, #224abe 0%, #1b49aa 100%);
-    border-bottom: 1px solid var(--topbar-border);
+    background: var(--topbar-bg);
 }
 
 header.topbar .navbar-brand {
@@ -54,8 +61,6 @@ main {
 
 .content-shell {
     background: var(--body-surface);
-    border: 1px solid var(--card-border);
-    border-radius: 1rem;
     box-shadow: var(--card-shadow);
     padding: 2rem;
     margin-bottom: 2rem;
@@ -67,7 +72,7 @@ main {
 .content-shell h4,
 .content-shell h5,
 .content-shell h6 {
-    color: var(--primary);
+    color: var(--heading);
     font-weight: 700;
 }
 
@@ -84,35 +89,29 @@ main {
     background: var(--body-surface);
 }
 
-.table th,
-.table td {
-    border-top: 1px solid rgba(15, 23, 42, 0.08);
+.table {
+    --bs-table-color: var(--text-body);
+    --bs-table-bg: var(--body-surface);
+    --bs-table-border-color: transparent;
+    --bs-table-striped-bg: var(--body-surface-strong);
+    --bs-table-striped-color: var(--text-body);
+    --bs-table-hover-bg: var(--body-surface-raised);
+    --bs-table-hover-color: var(--text-body);
 }
 
 .table thead th {
-    color: var(--primary);
-    border-bottom: 2px solid rgba(15, 23, 42, 0.12);
-    background-color: #f8f9fc;
-}
-
-.table-striped tbody tr:nth-of-type(odd) {
-    background-color: #f8f9fc;
-}
-
-.table-hover tbody tr:hover {
-    background-color: #eaecf4;
+    color: var(--heading);
+    background-color: var(--body-surface-strong);
 }
 
 .card {
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    border-radius: 1rem;
-    box-shadow: 0 0.75rem 1.75rem rgba(15, 23, 42, 0.12);
+    box-shadow: 0 0.75rem 1.75rem rgba(0, 0, 0, 0.35);
 }
 
 .form-control,
 .form-select {
-    border-radius: 0.45rem;
-    border: 1px solid rgba(15, 23, 42, 0.12);
+    background-color: var(--body-surface-raised);
+    color: var(--text-body);
 }
 
 .form-control:focus,
@@ -134,19 +133,18 @@ main {
 
 .btn-outline-secondary,
 .btn-outline-primary {
-    border-color: rgba(15, 23, 42, 0.12);
     color: var(--text-body);
 }
 
 .btn-outline-secondary:hover,
 .btn-outline-primary:hover {
-    background-color: #eaecf4;
-    color: var(--primary);
+    background-color: var(--body-surface-raised);
+    color: var(--heading);
 }
 
 .alert-secondary {
-    background-color: #f8f9fc;
-    border-color: rgba(15, 23, 42, 0.08);
+    background-color: var(--body-surface-strong);
+    border-color: var(--card-border);
     color: var(--text-body);
 }
 
@@ -179,13 +177,11 @@ th[aria-sort=descending] .sort-button::after {
     flex-wrap: wrap;
     gap: 0.25rem;
     padding: 0.25rem;
-    background: #eaecf4;
-    border-radius: 999px;
+    background: var(--body-surface-raised);
 }
 
 .timeframe-option {
     border: 0;
-    border-radius: 999px;
     padding: 0.3rem 0.85rem;
     background: transparent;
     color: var(--text-body);
@@ -196,7 +192,7 @@ th[aria-sort=descending] .sort-button::after {
 }
 
 .timeframe-option:hover {
-    color: var(--primary);
+    color: var(--heading);
 }
 
 a.timeframe-option {
@@ -241,11 +237,10 @@ a.timeframe-option {
 .chart-bar {
     grid-column: 2;
     height: 1rem;
-    border-radius: 0.25rem;
 }
 
 .chart-track {
-    background: #eaecf4;
+    background: var(--body-surface-raised);
 }
 
 .chart-expected {
@@ -255,7 +250,7 @@ a.timeframe-option {
     bottom: -0.2rem;
     width: 2px;
     margin-left: -1px;
-    background: #5a5c69;
+    background: #cbd5e1;
     z-index: 1;
 }
 
@@ -280,11 +275,11 @@ a.timeframe-option {
 }
 
 .chart-bar-overall-above {
-    background: #a4e8cf;
+    background: #146c4d;
 }
 
 .chart-bar-overall-below {
-    background: #f5b5ae;
+    background: #8a2d24;
 }
 
 .chart-value {
@@ -305,7 +300,7 @@ a.timeframe-option {
 }
 
 .line-chart-grid {
-    stroke: #eaecf4;
+    stroke: var(--body-surface-raised);
     stroke-width: 1;
 }
 
@@ -325,16 +320,16 @@ a.timeframe-option {
 
 /* Dimmed items are opaque and share one grey so overlaps do not darken; swatch colour is inline, hence !important. */
 .line-chart-series.line-chart-dimmed {
-    stroke: #d1d5db;
-    fill: #d1d5db;
+    stroke: #475569;
+    fill: #475569;
 }
 
 .line-chart-dimmed .line-chart-swatch {
-    background: #d1d5db !important;
+    background: #475569 !important;
 }
 
 .line-chart-legend .line-chart-dimmed a {
-    color: #9ca3af;
+    color: #64748b;
 }
 
 .line-chart-swatch {
@@ -342,7 +337,6 @@ a.timeframe-option {
     width: 0.8rem;
     height: 0.8rem;
     margin-right: 0.35rem;
-    border-radius: 0.2rem;
     vertical-align: -0.1rem;
 }
 
@@ -428,7 +422,6 @@ a.matchup-deck:hover .matchup-deck-label {
     display: flex;
     flex-direction: column;
     height: 4rem;
-    border-radius: 0.25rem;
     overflow: hidden;
 }
 
@@ -441,7 +434,7 @@ a.matchup-deck:hover .matchup-deck-label {
 }
 
 .matchup-other {
-    background: #eaecf4;
+    background: var(--body-surface-raised);
 }
 
 .matchup-percent {
@@ -457,11 +450,11 @@ a.matchup-deck:hover .matchup-deck-label {
 }
 
 .matchup-percent .matchup-selected {
-    color: #13855d;
+    color: #3ddc9f;
 }
 
 .matchup-percent .matchup-opponent {
-    color: #c0392b;
+    color: #ff8a7a;
 }
 
 .network-chart {
@@ -481,7 +474,7 @@ a.matchup-deck:hover .matchup-deck-label {
 }
 
 .network-node circle {
-    fill: var(--primary-dark);
+    fill: var(--primary);
 }
 
 .network-node text {
@@ -495,12 +488,12 @@ a.matchup-deck:hover .matchup-deck-label {
 }
 
 .network-label-bg {
-    fill: #fff;
-    stroke: rgba(15, 23, 42, 0.25);
+    fill: var(--body-surface);
+    stroke: rgba(255, 255, 255, 0.25);
 }
 
 .network-node:hover .network-label-bg {
-    stroke: var(--primary-dark);
+    stroke: var(--heading);
 }
 
 .network-label-hidden {
