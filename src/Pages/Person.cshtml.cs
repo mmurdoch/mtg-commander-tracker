@@ -19,6 +19,9 @@ namespace mtg_game_tracker.Pages
         public bool OverallInFront => OverallPercent < Percent;
     }
 
+    // Counts has one entry per month in PersonModel.PlayMonths.
+    public record DeckMonthlyPlays(int DeckId, string Label, IReadOnlyList<int> Counts);
+
     public class PersonModel : PageModel
     {
         public const int MaxDecks = 5;
@@ -37,6 +40,9 @@ namespace mtg_game_tracker.Pages
             new Dictionary<int, IReadOnlyList<ChartEntry>>();
         public IReadOnlyDictionary<int, IReadOnlyList<ChartEntry>> OverallSeats { get; private set; } =
             new Dictionary<int, IReadOnlyList<ChartEntry>>();
+
+        public IReadOnlyList<DateTime> PlayMonths { get; private set; } = Array.Empty<DateTime>();
+        public IReadOnlyList<DeckMonthlyPlays> DeckPlays { get; private set; } = Array.Empty<DeckMonthlyPlays>();
 
         public string SelectedTimeframe { get; private set; } = WinCharts.AllTime;
 
@@ -105,7 +111,51 @@ namespace mtg_game_tracker.Pages
             }
             DeckShares = shares;
 
+            await LoadDeckPlaysAsync(id, labels, since);
+
             return Page();
+        }
+
+        // Plays of the person's own decks (by anyone), bucketed by calendar month up to the current month.
+        private async Task LoadDeckPlaysAsync(int ownerId, IReadOnlyDictionary<int, string> labels, DateTime? since)
+        {
+            var ownedIds = await _db.Decks.Where(d => d.OwnerId == ownerId).Select(d => d.Id).ToListAsync();
+            var plays = await _db.Participants
+                .Where(p => p.DeckId != null && ownedIds.Contains(p.DeckId.Value))
+                .Where(p => since == null || p.Game!.Date >= since)
+                .Select(p => new { DeckId = p.DeckId!.Value, p.Game!.Date })
+                .ToListAsync();
+            if (plays.Count == 0)
+            {
+                PlayMonths = Array.Empty<DateTime>();
+                DeckPlays = Array.Empty<DeckMonthlyPlays>();
+                return;
+            }
+
+            var first = since ?? plays.Min(p => p.Date);
+            var start = new DateTime(first.Year, first.Month, 1);
+            var end = new DateTime(Today.Year, Today.Month, 1);
+            var last = plays.Max(p => p.Date);
+            if (last > end)
+            {
+                end = new DateTime(last.Year, last.Month, 1);
+            }
+            var months = new List<DateTime>();
+            for (var month = start; month <= end; month = month.AddMonths(1))
+            {
+                months.Add(month);
+            }
+            PlayMonths = months;
+
+            DeckPlays = plays
+                .GroupBy(p => p.DeckId)
+                .Select(g => new DeckMonthlyPlays(
+                    g.Key,
+                    labels[g.Key],
+                    months.Select(m => g.Count(p => p.Date.Year == m.Year && p.Date.Month == m.Month)).ToList()))
+                .OrderByDescending(d => d.Counts.Sum())
+                .ThenBy(d => d.Label, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
     }
 }

@@ -14,6 +14,19 @@
     var deckTotal = Model.DeckShares.Sum(d => d.Games);
     var winRows = WinCharts.PlayerCounts.Select((size, i) => WinRow(Model.WinsByPlayerCount[i].Label, Model.WinsByPlayerCount[i], size)).ToList();
     var deckRows = Model.DeckShares.Select(d => new BarRow(d.Label, d.Percent, $"{Pct(d.Percent)}% ({d.Games}/{deckTotal})", Url: d.DeckId is int deckId ? Url.Page("/Deck", new { id = deckId }) : null)).ToList();
+
+    string[] palette = { "#4e73df", "#e74a3b", "#1cc88a", "#f6c23e", "#36b9cc", "#8e44ad", "#fd7e14", "#e83e8c", "#20c997", "#6c757d" };
+    const double chartWidth = 720, chartHeight = 300, left = 40, right = 16, top = 12, bottom = 36;
+    var plotWidth = chartWidth - left - right;
+    var plotHeight = chartHeight - top - bottom;
+    var monthCount = Model.PlayMonths.Count;
+    var maxPlays = Model.DeckPlays.Count == 0 ? 1 : Math.Max(1, Model.DeckPlays.Max(d => d.Counts.Max()));
+    var tickStep = (int)Math.Ceiling(maxPlays / 5.0);
+    var yMax = (int)Math.Ceiling(maxPlays / (double)tickStep) * tickStep;
+    var labelStep = Math.Max(1, (int)Math.Ceiling(monthCount / (plotWidth / 64)));
+    double X(int i) => monthCount == 1 ? left + plotWidth / 2 : left + plotWidth * i / (monthCount - 1);
+    double Y(int count) => top + plotHeight * (1 - (double)count / yMax);
+    static string Num(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 }
 
 <div class="mb-4 d-flex justify-content-between align-items-center">
@@ -82,3 +95,51 @@
         </div>
     }
 </div>
+
+<div class="mt-5" data-chart="deck-plays">
+    <h2 class="h5">Deck plays by month</h2>
+    @if (Model.DeckPlays.Count == 0)
+    {
+        <p class="text-muted small mb-0">No deck plays yet.</p>
+    }
+    else
+    {
+        <svg class="line-chart" viewBox="0 0 @Num(chartWidth) @Num(chartHeight)" role="img" aria-label="Plays per month for each of @Model.Person!.Name's decks">
+            @for (var tick = 0; tick <= yMax; tick += tickStep)
+            {
+                <line class="line-chart-grid" x1="@Num(left)" x2="@Num(chartWidth - right)" y1="@Num(Y(tick))" y2="@Num(Y(tick))" />
+                @* Razor treats a literal <text> element as a transition, so the SVG text nodes are emitted raw (numbers and dates only). *@
+                @Html.Raw($"<text class=\"line-chart-label\" x=\"{Num(left - 6)}\" y=\"{Num(Y(tick) + 4)}\" text-anchor=\"end\">{tick}</text>")
+            }
+            @for (var i = 0; i < monthCount; i += labelStep)
+            {
+                @Html.Raw($"<text class=\"line-chart-label\" x=\"{Num(X(i))}\" y=\"{Num(chartHeight - bottom + 18)}\" text-anchor=\"middle\">{Model.PlayMonths[i].ToString("MMM yyyy", CultureInfo.InvariantCulture)}</text>")
+            }
+            @for (var d = 0; d < Model.DeckPlays.Count; d++)
+            {
+                var deck = Model.DeckPlays[d];
+                var color = palette[d % palette.Length];
+                var points = deck.Counts.Select((c, i) => $"{Num(X(i))},{Num(Y(c))}").ToList();
+                <g class="line-chart-series" data-deck="@deck.DeckId" stroke="@color" fill="@color">
+                    <polyline fill="none" stroke-width="2" points="@string.Join(" ", points)" />
+                    <path class="line-chart-hit" d="@("M" + string.Join(" L", points))" />
+                    @for (var i = 0; i < monthCount; i++)
+                    {
+                        <circle cx="@Num(X(i))" cy="@Num(Y(deck.Counts[i]))" r="3.5"><title>@deck.Label - @Model.PlayMonths[i].ToString("MMM yyyy", CultureInfo.InvariantCulture): @deck.Counts[i]</title></circle>
+                    }
+                </g>
+            }
+        </svg>
+        <ul class="line-chart-legend list-unstyled d-flex flex-wrap gap-3 small mt-2 mb-0">
+            @for (var d = 0; d < Model.DeckPlays.Count; d++)
+            {
+                var deck = Model.DeckPlays[d];
+                <li data-deck="@deck.DeckId"><span class="line-chart-swatch" style="background: @palette[d % palette.Length]"></span><a asp-page="/Deck" asp-route-id="@deck.DeckId">@deck.Label</a></li>
+            }
+        </ul>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/deck-plays-chart.js" asp-append-version="true"></script>
+}

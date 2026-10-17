@@ -335,6 +335,162 @@ public class PersonPageTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal(5, System.Text.RegularExpressions.Regex.Matches(chart, "<a [^>]*href=\"/Deck\\?id=").Count);
     }
 
+    private async Task AddAtraxaGamesInMarchAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var bob = db.People.Single(p => p.Name == "Bob");
+        var atraxa = db.Decks.Single(d => d.Commander == "Atraxa");
+        foreach (var (player, other) in new[] { (_aliceId, bob.Id), (bob.Id, _aliceId) })
+        {
+            var game = new Game { Date = new DateTime(2024, 3, 1), WinnerId = player };
+            game.Participants.Add(new Participant { PlayerId = player, DeckId = atraxa.Id });
+            game.Participants.Add(new Participant { PlayerId = other });
+            db.Games.Add(game);
+        }
+        await db.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task OnGet_DeckPlaysByMonthCountsEveryPlayOfTheOwnersDecksIncludingEmptyMonths()
+    {
+        await SeedAsync();
+        await AddAtraxaGamesInMarchAsync();
+        using var scope = _factory.Services.CreateScope();
+        var model = new PersonModel(scope.ServiceProvider.GetRequiredService<AppDbContext>())
+        {
+            Today = new DateTime(2024, 3, 15)
+        };
+
+        await model.OnGetAsync(_aliceId);
+
+        Assert.Equal(new[] { new DateTime(2024, 1, 1), new DateTime(2024, 2, 1), new DateTime(2024, 3, 1) }, model.PlayMonths);
+        Assert.Equal(new[] { "Atraxa", "Breya", "Ceta", "Dina", "Edgar", "Fynn", "Gorm" }, model.DeckPlays.Select(d => d.Label));
+        Assert.Equal(new[] { 3, 0, 2 }, model.DeckPlays[0].Counts);
+        Assert.Equal(new[] { 2, 0, 0 }, model.DeckPlays[1].Counts);
+    }
+
+    [Fact]
+    public async Task OnGet_DeckPlaysByMonthFollowTheTimeframe()
+    {
+        await SeedAsync();
+        await AddAtraxaGamesInMarchAsync();
+        using var scope = _factory.Services.CreateScope();
+        var model = new PersonModel(scope.ServiceProvider.GetRequiredService<AppDbContext>())
+        {
+            Today = new DateTime(2024, 3, 15)
+        };
+
+        await model.OnGetAsync(_aliceId, "1m");
+
+        Assert.Equal(new[] { new DateTime(2024, 2, 1), new DateTime(2024, 3, 1) }, model.PlayMonths);
+        var atraxa = Assert.Single(model.DeckPlays);
+        Assert.Equal("Atraxa", atraxa.Label);
+        Assert.Equal(new[] { 0, 2 }, atraxa.Counts);
+    }
+
+    [Fact]
+    public async Task OnGet_DeckPlaysByMonthAreEmptyWhenTheOwnersDecksWereNeverPlayed()
+    {
+        await SeedAsync();
+
+        var model = await LoadAsync(_evaId);
+
+        Assert.Empty(model.PlayMonths);
+        Assert.Empty(model.DeckPlays);
+    }
+
+    [Fact]
+    public async Task PersonPage_RendersDeckPlaysLineChartAfterTheSeatCharts()
+    {
+        await SeedAsync();
+        await AddAtraxaGamesInMarchAsync();
+
+        var html = await (await _factory.CreateClient().GetAsync($"/Person?id={_aliceId}")).Content.ReadAsStringAsync();
+
+        var start = html.IndexOf("data-chart=\"deck-plays\"", StringComparison.Ordinal);
+        Assert.True(start > html.IndexOf("data-chart=\"seats\" data-players=\"4\"", StringComparison.Ordinal));
+        var chart = html[start..];
+        Assert.Equal(7, System.Text.RegularExpressions.Regex.Matches(chart, "<polyline ").Count);
+        Assert.Contains("Jan 2024", chart);
+        Assert.Contains("Mar 2024", chart);
+        Assert.Contains("Atraxa", chart);
+    }
+
+    [Fact]
+    public async Task PersonPage_EachDeckPlaysLineHasAWideInvisibleHoverTargetInsideItsSeriesGroup()
+    {
+        await SeedAsync();
+
+        var html = await (await _factory.CreateClient().GetAsync($"/Person?id={_aliceId}")).Content.ReadAsStringAsync();
+
+        var chart = html[html.IndexOf("data-chart=\"deck-plays\"", StringComparison.Ordinal)..];
+        var groups = System.Text.RegularExpressions.Regex.Matches(chart, "<g class=\"line-chart-series\".*?</g>", System.Text.RegularExpressions.RegexOptions.Singleline);
+        Assert.Equal(7, groups.Count);
+        Assert.All(groups, g => Assert.Contains("<path class=\"line-chart-hit\"", g.Value));
+        Assert.All(groups, g => Assert.Matches("<path class=\"line-chart-hit\" d=\"M[\\d.]+,[\\d.]+( L[\\d.]+,[\\d.]+)*\"", g.Value));
+    }
+
+    [Fact]
+    public async Task PersonPage_LegendEntriesCarryTheDeckIdAndTheHighlightScriptIsLoaded()
+    {
+        await SeedAsync();
+
+        var html = await (await _factory.CreateClient().GetAsync($"/Person?id={_aliceId}")).Content.ReadAsStringAsync();
+
+        var chart = html[html.IndexOf("data-chart=\"deck-plays\"", StringComparison.Ordinal)..];
+        var legend = chart[chart.IndexOf("<ul class=\"line-chart-legend", StringComparison.Ordinal)..];
+        Assert.Equal(7, System.Text.RegularExpressions.Regex.Matches(legend, "<li data-deck=\"\\d+\">").Count);
+        Assert.Contains("/js/deck-plays-chart.js", html);
+    }
+
+    private static string RepoRoot([System.Runtime.CompilerServices.CallerFilePath] string sourceFile = "") =>
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(sourceFile)!, "..", ".."));
+
+    [Fact]
+    public void Stylesheet_PaintsDimmedDeckPlaysLinesAndSwatchesTheSameGrey()
+    {
+        var css = File.ReadAllText(Path.Combine(RepoRoot(), "src", "wwwroot", "css", "site.css"));
+
+        var line = System.Text.RegularExpressions.Regex.Match(css, @"\.line-chart-series\.line-chart-dimmed\s*\{[^}]*stroke:\s*(#[0-9a-f]+)");
+        var swatch = System.Text.RegularExpressions.Regex.Match(css, @"\.line-chart-dimmed\s+\.line-chart-swatch\s*\{[^}]*background:\s*(#[0-9a-f]+)");
+        Assert.True(line.Success);
+        Assert.True(swatch.Success);
+        Assert.Equal(line.Groups[1].Value, swatch.Groups[1].Value);
+        Assert.DoesNotContain("grayscale", css);
+    }
+
+    [Fact]
+    public void Stylesheet_DeckPlaysHoverTargetIsAtLeast24UnitsWide()
+    {
+        var css = File.ReadAllText(Path.Combine(RepoRoot(), "src", "wwwroot", "css", "site.css"));
+
+        var width = System.Text.RegularExpressions.Regex.Match(css, @"\.line-chart-hit\s*\{[^}]*stroke-width:\s*(\d+)");
+        Assert.True(width.Success);
+        Assert.True(int.Parse(width.Groups[1].Value) >= 24);
+    }
+
+    [Fact]
+    public void Stylesheet_DimmedDeckPlaysElementsAreOpaqueSoOverlapsStayTheSameGrey()
+    {
+        var css = File.ReadAllText(Path.Combine(RepoRoot(), "src", "wwwroot", "css", "site.css"));
+
+        Assert.DoesNotMatch(@"line-chart-dimmed[^{}]*\{[^}]*opacity", css);
+        Assert.DoesNotMatch(@"line-chart-series[^{}]*\{[^}]*opacity", css);
+    }
+
+    [Fact]
+    public async Task PersonPage_DeckPlaysChartShowsMessageWithoutPlays()
+    {
+        await SeedAsync();
+
+        var html = await (await _factory.CreateClient().GetAsync($"/Person?id={_evaId}")).Content.ReadAsStringAsync();
+
+        var chart = html[html.IndexOf("data-chart=\"deck-plays\"", StringComparison.Ordinal)..];
+        Assert.Contains("No deck plays yet.", chart);
+        Assert.DoesNotContain("<polyline", chart);
+    }
+
     [Fact]
     public async Task PeoplePage_LinksEachNameToThePersonPage()
     {
