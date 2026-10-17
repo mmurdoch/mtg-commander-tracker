@@ -7,7 +7,14 @@
         var row = Model[i];
         var gridRow = $"grid-row: {i + 1}";
         <div class="chart-row">
-            <span class="chart-label" style="@gridRow" title="@row.Label">@row.Label</span>
+            @if (row.Url is not null)
+            {
+                <a class="chart-label" style="@gridRow" title="@row.Label" href="@row.Url">@row.Label</a>
+            }
+            else
+            {
+                <span class="chart-label" style="@gridRow" title="@row.Label">@row.Label</span>
+            }
             <div class="chart-track" style="@gridRow"></div>
             @if (row.ExpectedPercent is double expected)
             {

@@ -107,16 +107,16 @@ test('chart labels expose the full name as a hover tooltip', () => {
   assert.equal(chart('decks', 2).querySelector('.chart-label').title, 'A very long commander name (Deck)');
 });
 
-test('deck chart labels link to the deck matchups page', () => {
+test('deck chart labels link to the deck page', () => {
   const { chart, document } = setup({
     people: { 2: [entry('Someone', 1, 1)], 3: [], 4: [] },
     decks: { 2: [{ label: 'Atraxa', games: 5, wins: 3, deckId: 7 }], 3: [], 4: [] },
   });
-  chart('decks', 2).setAttribute('data-deck-url', '/DeckMatchups');
+  chart('decks', 2).setAttribute('data-deck-url', '/Deck');
   document.querySelector('[data-timeframe="all"]').click();
 
   const link = chart('decks', 2).querySelector('a.chart-label');
-  assert.equal(link.getAttribute('href'), '/DeckMatchups?id=7');
+  assert.equal(link.getAttribute('href'), '/Deck?id=7');
   assert.equal(link.textContent, 'Atraxa');
   assert.equal(chart('people', 2).querySelector('a.chart-label'), null);
 });

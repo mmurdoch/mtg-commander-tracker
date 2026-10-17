@@ -120,7 +120,7 @@
     <div class="row g-4 mb-5">
         @foreach (var size in WinCharts.PlayerCounts.OrderDescending())
         {
-            <div class="col-12 col-lg-4" data-chart="decks" data-players="@size" data-deck-url="@Url.Page("/DeckMatchups")">
+            <div class="col-12 col-lg-4" data-chart="decks" data-players="@size" data-deck-url="@Url.Page("/Deck")">
                 <h4 class="h6">@size-player win %</h4>
                 <label class="form-label small mb-1" for="minGames@(size)">Minimum games: <output class="min-games-value">5</output></label>
                 <input type="range" class="form-range min-games-slider" id="minGames@(size)" min="1" max="40" step="1" value="5" />

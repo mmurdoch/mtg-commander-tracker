@@ -318,6 +318,24 @@ public class PersonPageTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task PersonPage_DeckSharesLinkToTheDeckPagesExceptOther()
+    {
+        await SeedAsync();
+        int atraxaId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            atraxaId = scope.ServiceProvider.GetRequiredService<AppDbContext>().Decks.Single(d => d.Commander == "Atraxa").Id;
+        }
+
+        var html = await (await _factory.CreateClient().GetAsync($"/Person?id={_aliceId}")).Content.ReadAsStringAsync();
+
+        var chart = html[html.IndexOf("data-chart=\"deck-share\"", StringComparison.Ordinal)..html.IndexOf("Win % by seat position", StringComparison.Ordinal)];
+        Assert.Contains($"<a class=\"chart-label\" style=\"grid-row: 1\" title=\"Atraxa\" href=\"/Deck?id={atraxaId}\">Atraxa</a>", chart);
+        Assert.Contains("<span class=\"chart-label\" style=\"grid-row: 6\" title=\"Other\">Other</span>", chart);
+        Assert.Equal(5, System.Text.RegularExpressions.Regex.Matches(chart, "<a [^>]*href=\"/Deck\\?id=").Count);
+    }
+
+    [Fact]
     public async Task PeoplePage_LinksEachNameToThePersonPage()
     {
         await SeedAsync();

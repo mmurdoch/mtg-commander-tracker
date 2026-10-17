@@ -156,7 +156,7 @@ public class HomeChartsTests : IClassFixture<WebApplicationFactory<Program>>
         var html = await (await _factory.CreateClient().GetAsync("/")).Content.ReadAsStringAsync();
 
         Assert.Equal(atraxaId, charts.Decks[2].Single(e => e.Label == "Atraxa").DeckId);
-        Assert.Equal(3, Regex.Matches(html, "data-chart=\"decks\"[^>]*data-deck-url=\"/DeckMatchups\"").Count);
+        Assert.Equal(3, Regex.Matches(html, "data-chart=\"decks\"[^>]*data-deck-url=\"/Deck\"").Count);
     }
 
     [Fact]

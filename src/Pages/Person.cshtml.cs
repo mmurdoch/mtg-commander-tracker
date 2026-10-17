@@ -7,12 +7,12 @@ using mtg_game_tracker.Services;
 
 namespace mtg_game_tracker.Pages
 {
-    public record DeckShare(string Label, int Games, double Percent);
+    public record DeckShare(string Label, int Games, double Percent, int? DeckId = null);
 
     // ExpectedPercent draws a marker at the win rate expected from chance alone; null for no marker.
     // OverallPercent adds a muted comparison bar, drawn in front only where it is shorter than the main bar.
-    // Tooltip is shown on both bars so either one can be hovered.
-    public record BarRow(string Label, double Percent, string Text, double? ExpectedPercent = null, double? OverallPercent = null, string? Tooltip = null)
+    // Tooltip is shown on both bars so either one can be hovered. Url turns the label into a link.
+    public record BarRow(string Label, double Percent, string Text, double? ExpectedPercent = null, double? OverallPercent = null, string? Tooltip = null, string? Url = null)
     {
         public bool Above => ExpectedPercent is double expected && Percent > expected;
         public bool OverallAbove => ExpectedPercent is double expected && OverallPercent > expected;
@@ -91,13 +91,13 @@ namespace mtg_game_tracker.Pages
             var counts = deckIds
                 .GroupBy(d => d)
                 .Where(g => labels.ContainsKey(g.Key))
-                .Select(g => (Label: labels[g.Key], Games: g.Count()))
+                .Select(g => (Id: g.Key, Label: labels[g.Key], Games: g.Count()))
                 .OrderByDescending(d => d.Games)
                 .ThenBy(d => d.Label, StringComparer.OrdinalIgnoreCase)
                 .ToList();
             var total = counts.Sum(d => d.Games);
 
-            var shares = counts.Take(MaxDecks).Select(d => new DeckShare(d.Label, d.Games, (double)d.Games / total * 100)).ToList();
+            var shares = counts.Take(MaxDecks).Select(d => new DeckShare(d.Label, d.Games, (double)d.Games / total * 100, d.Id)).ToList();
             var otherGames = counts.Skip(MaxDecks).Sum(d => d.Games);
             if (otherGames > 0)
             {

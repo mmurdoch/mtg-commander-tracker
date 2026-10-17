@@ -21,14 +21,14 @@ const data = {
   ],
 };
 
-function setup(payload = data) {
+function setup(payload = data, focusDeck = null) {
   const dom = new JSDOM(
     `<script type="application/json" id="deck-network-data">${JSON.stringify(payload)}</script>
      <div id="network-filter">
        <input type="range" id="minDeckGames" min="1" max="1" value="1" />
        <output class="min-games-value">1</output>
      </div>
-     <div id="deck-network" data-deck-url="/DeckMatchups"></div>`,
+     <div id="deck-network" data-deck-url="/DeckMatchups"${focusDeck === null ? '' : ` data-focus-deck="${focusDeck}"`}></div>`,
     { runScripts: 'outside-only' });
   dom.window.eval(script);
   const { document } = dom.window;
@@ -202,6 +202,21 @@ test('a focused deck is marked and links to its matchups', () => {
   assert.deepEqual(Array.from(document.querySelectorAll('.network-focused text')).map(t => t.textContent), ['Deck 6']);
   assert.equal(document.querySelector('.network-matchups').getAttribute('href'), '/DeckMatchups?id=6');
   assert.match(document.querySelector('.network-focus').textContent, /Deck 6/);
+});
+
+test('a deck named by data-focus-deck is focused on load', () => {
+  const { labels, edges, filterHidden } = setup(chain(25), 6);
+
+  assert.deepEqual(labels().sort(), ['Deck 5', 'Deck 6', 'Deck 7']);
+  assert.equal(edges().length, 2);
+  assert.equal(filterHidden(), true);
+});
+
+test('a focus deck that is not in the network is ignored', () => {
+  const { nodes, filterHidden } = setup(chain(25), 999);
+
+  assert.equal(nodes().length, 20);
+  assert.equal(filterHidden(), false);
 });
 
 test('clicking a node in the focused view moves the focus to it', () => {

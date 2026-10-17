@@ -167,6 +167,26 @@ public class DeckNetworkPageTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task Page_FocusesTheDeckNamedInTheQuery()
+    {
+        await SeedAsync();
+
+        var html = await (await _factory.CreateClient().GetAsync($"/DeckNetwork?deck={_ids["Atraxa"]}")).Content.ReadAsStringAsync();
+
+        Assert.Contains($"data-deck-url=\"/DeckMatchups\" data-focus-deck=\"{_ids["Atraxa"]}\"", html);
+    }
+
+    [Fact]
+    public async Task Page_HasNoFocusWithoutADeckInTheQuery()
+    {
+        await SeedAsync();
+
+        var html = await (await _factory.CreateClient().GetAsync("/DeckNetwork")).Content.ReadAsStringAsync();
+
+        Assert.DoesNotContain("data-focus-deck", html);
+    }
+
+    [Fact]
     public async Task DecksPage_LinksToTheNetwork()
     {
         var response = await _factory.CreateClient().GetAsync("/Decks");

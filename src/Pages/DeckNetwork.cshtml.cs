@@ -22,8 +22,11 @@ namespace mtg_game_tracker.Pages
 
         public List<NetworkEdge> Edges { get; private set; } = new();
 
-        public async Task OnGetAsync()
+        public int? FocusDeckId { get; private set; }
+
+        public async Task OnGetAsync(int? deck = null)
         {
+            FocusDeckId = deck;
             var decks = await _db.Decks.Include(d => d.Owner).ToListAsync();
             var labels = Deck.BuildDisplayNames(decks);
 

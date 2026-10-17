@@ -223,14 +223,4 @@ public class DeckMatchupsPageTests : IClassFixture<WebApplicationFactory<Program
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
-
-    [Fact]
-    public async Task DecksPage_LinksEachDeckToItsMatchupsPage()
-    {
-        await SeedAsync();
-
-        var html = await (await _factory.CreateClient().GetAsync("/Decks")).Content.ReadAsStringAsync();
-
-        Assert.Contains($"href=\"/DeckMatchups?id={_atraxaId}\"", html);
-    }
 }

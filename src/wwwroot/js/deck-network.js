@@ -236,6 +236,8 @@
     }
 
     setUpSlider();
+    var initialFocus = parseInt(container.getAttribute('data-focus-deck'), 10);
+    if (data.nodes.some(function (node) { return node.deckId === initialFocus; })) focusId = initialFocus;
     slider.addEventListener('input', render);
     render();
 })();

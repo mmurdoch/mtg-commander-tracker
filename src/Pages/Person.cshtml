@@ -13,7 +13,7 @@
 
     var deckTotal = Model.DeckShares.Sum(d => d.Games);
     var winRows = WinCharts.PlayerCounts.Select((size, i) => WinRow(Model.WinsByPlayerCount[i].Label, Model.WinsByPlayerCount[i], size)).ToList();
-    var deckRows = Model.DeckShares.Select(d => new BarRow(d.Label, d.Percent, $"{Pct(d.Percent)}% ({d.Games}/{deckTotal})")).ToList();
+    var deckRows = Model.DeckShares.Select(d => new BarRow(d.Label, d.Percent, $"{Pct(d.Percent)}% ({d.Games}/{deckTotal})", Url: d.DeckId is int deckId ? Url.Page("/Deck", new { id = deckId }) : null)).ToList();
 }
 
 <div class="mb-4 d-flex justify-content-between align-items-center">
