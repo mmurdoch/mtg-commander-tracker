@@ -95,6 +95,34 @@ public class DarkThemeTests
         Assert.DoesNotContain("gradient", topbar);
     }
 
+    [Fact]
+    public void Layout_NavLinksAreLeftAligned()
+    {
+        var layout = File.ReadAllText(Path.Combine(RepoRoot(), "src", "Pages", "Shared", "_Layout.cshtml"));
+
+        Assert.Matches(@"<ul[^>]*class=""[^""]*\bnavbar-nav\b[^""]*\bme-auto\b", layout);
+        Assert.DoesNotContain("ms-auto", layout);
+    }
+
+    [Fact]
+    public void Layout_ContentIsLeftAligned()
+    {
+        var layout = File.ReadAllText(Path.Combine(RepoRoot(), "src", "Pages", "Shared", "_Layout.cshtml"));
+
+        Assert.Matches(@"<main[^>]*class=""[^""]*\bcontainer-xl\b[^""]*\bms-0\b", layout);
+        Assert.DoesNotContain("container-fluid\" py-4", layout);
+        Assert.DoesNotContain("mx-auto", layout);
+    }
+
+    [Fact]
+    public void Stylesheet_ContentShellHasNoBackgroundOrShadow()
+    {
+        var shell = Regex.Match(Css(), @"\.content-shell\s*\{([^}]*)\}").Groups[1].Value;
+
+        Assert.DoesNotContain("background", shell);
+        Assert.DoesNotContain("box-shadow", shell);
+    }
+
     [Theory]
     [InlineData("Decks.cshtml")]
     [InlineData("People.cshtml")]

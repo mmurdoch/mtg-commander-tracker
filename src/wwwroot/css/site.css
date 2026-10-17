@@ -60,8 +60,6 @@ main {
 }
 
 .content-shell {
-    background: var(--body-surface);
-    box-shadow: var(--card-shadow);
     padding: 2rem;
     margin-bottom: 2rem;
 }
