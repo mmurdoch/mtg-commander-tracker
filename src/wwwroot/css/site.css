@@ -396,3 +396,59 @@ a.matchup-deck:hover .matchup-deck-label {
 .matchup-percent .matchup-opponent {
     color: #c0392b;
 }
+
+.network-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.network-edge {
+    stroke: var(--primary);
+    stroke-opacity: 0.45;
+    stroke-linecap: round;
+}
+
+.network-edge:hover {
+    stroke-opacity: 0.9;
+}
+
+.network-node circle {
+    fill: var(--primary-dark);
+}
+
+.network-node text {
+    fill: var(--text-body);
+    font-size: 13px;
+}
+
+.network-node,
+.network-node:hover {
+    text-decoration: none;
+}
+
+.network-label-bg {
+    fill: #fff;
+    stroke: rgba(15, 23, 42, 0.25);
+}
+
+.network-node:hover .network-label-bg {
+    stroke: var(--primary-dark);
+}
+
+.network-label-hidden {
+    visibility: hidden;
+}
+
+.network-node:hover .network-label-hidden,
+.network-node:focus-visible .network-label-hidden {
+    visibility: visible;
+}
+
+.network-focused circle {
+    fill: var(--success);
+}
+
+.network-focused text {
+    font-weight: 600;
+}

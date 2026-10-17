@@ -1,0 +1,20 @@
+@page
+@model DeckNetworkModel
+
+<div class="mb-4">
+    <h1 class="h3">Deck network</h1>
+    <p class="text-muted mb-0">Decks that have played each other. Line width is the number of games between two decks.</p>
+</div>
+
+<div id="network-filter" class="mb-4" style="width: 24rem; max-width: 100%">
+    <label class="form-label small mb-1" for="minDeckGames">Minimum games per deck: <output class="min-games-value">1</output></label>
+    <input type="range" class="form-range" id="minDeckGames" min="1" max="1" value="1" />
+</div>
+
+<div id="deck-network" data-deck-url="@Url.Page("/DeckMatchups")"></div>
+
+<script type="application/json" id="deck-network-data">@Json.Serialize(new { nodes = Model.Nodes, edges = Model.Edges })</script>
+
+@section Scripts {
+    <script src="~/js/deck-network.js" asp-append-version="true"></script>
+}
