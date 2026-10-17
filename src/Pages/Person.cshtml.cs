@@ -25,6 +25,8 @@ namespace mtg_game_tracker.Pages
     public class PersonModel : PageModel
     {
         public const int MaxDecks = 5;
+        public const string UsageCount = "count";
+        public const string UsagePercent = "percent";
 
         private readonly AppDbContext _db;
 
@@ -44,12 +46,17 @@ namespace mtg_game_tracker.Pages
         public IReadOnlyList<DateTime> PlayMonths { get; private set; } = Array.Empty<DateTime>();
         public IReadOnlyList<DeckMonthlyPlays> DeckPlays { get; private set; } = Array.Empty<DeckMonthlyPlays>();
 
+        // Total plays of the owner's decks in each month of PlayMonths; the denominator for percent usage.
+        public IReadOnlyList<int> MonthTotals { get; private set; } = Array.Empty<int>();
+
         public string SelectedTimeframe { get; private set; } = WinCharts.AllTime;
+        public string SelectedUsage { get; private set; } = UsagePercent;
 
         public DateTime Today { get; set; } = DateTime.Today;
 
-        public async Task<IActionResult> OnGetAsync(int id, string? timeframe = null)
+        public async Task<IActionResult> OnGetAsync(int id, string? timeframe = null, string? usage = null)
         {
+            SelectedUsage = usage == UsageCount ? UsageCount : UsagePercent;
             Person = await _db.People.FirstOrDefaultAsync(p => p.Id == id);
             if (Person is null)
             {
@@ -129,6 +136,7 @@ namespace mtg_game_tracker.Pages
             {
                 PlayMonths = Array.Empty<DateTime>();
                 DeckPlays = Array.Empty<DeckMonthlyPlays>();
+                MonthTotals = Array.Empty<int>();
                 return;
             }
 
@@ -146,6 +154,7 @@ namespace mtg_game_tracker.Pages
                 months.Add(month);
             }
             PlayMonths = months;
+            MonthTotals = months.Select(m => plays.Count(p => p.Date.Year == m.Year && p.Date.Month == m.Month)).ToList();
 
             DeckPlays = plays
                 .GroupBy(p => p.DeckId)

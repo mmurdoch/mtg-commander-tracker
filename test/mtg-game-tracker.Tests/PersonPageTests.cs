@@ -480,6 +480,89 @@ public class PersonPageTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task OnGet_DeckPlaysUsageDefaultsToPercentAndExposesMonthTotals()
+    {
+        await SeedAsync();
+        await AddAtraxaGamesInMarchAsync();
+        using var scope = _factory.Services.CreateScope();
+        var model = new PersonModel(scope.ServiceProvider.GetRequiredService<AppDbContext>())
+        {
+            Today = new DateTime(2024, 3, 15)
+        };
+
+        await model.OnGetAsync(_aliceId);
+
+        Assert.Equal("percent", model.SelectedUsage);
+        Assert.Equal(new[] { 10, 0, 2 }, model.MonthTotals);
+    }
+
+    [Fact]
+    public async Task OnGet_DeckPlaysUsageAcceptsCountAndFallsBackToPercentOtherwise()
+    {
+        await SeedAsync();
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var count = new PersonModel(db);
+        await count.OnGetAsync(_aliceId, null, "count");
+        var bogus = new PersonModel(db);
+        await bogus.OnGetAsync(_aliceId, null, "bogus");
+
+        Assert.Equal("count", count.SelectedUsage);
+        Assert.Equal("percent", bogus.SelectedUsage);
+    }
+
+    [Fact]
+    public async Task PersonPage_RendersUsageLinksThatKeepTheTimeframeAndViceVersa()
+    {
+        await SeedAsync();
+
+        var html = await (await _factory.CreateClient().GetAsync($"/Person?id={_aliceId}&timeframe=6m&usage=count")).Content.ReadAsStringAsync();
+
+        Assert.Matches("aria-pressed=\"true\"[^>]*>Game count</a>", html);
+        Assert.Matches("aria-pressed=\"false\"[^>]*>% of games</a>", html);
+        Assert.Matches("href=\"[^\"]*timeframe=6m[^\"]*\"[^>]*>% of games</a>", html);
+        Assert.Matches("href=\"[^\"]*usage=count[^\"]*\"[^>]*>Last month</a>", html);
+        Assert.True(html.IndexOf(">% of games</a>", StringComparison.Ordinal) < html.IndexOf(">Game count</a>", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task PersonPage_PercentUsageShowsEachDecksShareOfTheMonthsPlays()
+    {
+        await SeedAsync();
+
+        var html = await (await _factory.CreateClient().GetAsync($"/Person?id={_aliceId}")).Content.ReadAsStringAsync();
+
+        var chart = html[html.IndexOf("data-chart=\"deck-plays\"", StringComparison.Ordinal)..];
+        Assert.Contains("Atraxa - Jan 2024: 30% (3/10)", chart);
+    }
+
+    [Fact]
+    public async Task PersonPage_PercentUsageYAxisStopsAtTheNextTickAboveTheHighestShare()
+    {
+        await SeedAsync();
+
+        var html = await (await _factory.CreateClient().GetAsync($"/Person?id={_aliceId}")).Content.ReadAsStringAsync();
+
+        // Highest share is 30%, so the axis runs 0-30% in 10% steps.
+        var chart = html[html.IndexOf("data-chart=\"deck-plays\"", StringComparison.Ordinal)..];
+        var labels = System.Text.RegularExpressions.Regex.Matches(chart, "text-anchor=\"end\">([^<]*)</text>")
+            .Select(m => m.Groups[1].Value);
+        Assert.Equal(new[] { "0%", "10%", "20%", "30%" }, labels);
+    }
+
+    [Fact]
+    public async Task PersonPage_CountUsageKeepsRawCountsInTooltips()
+    {
+        await SeedAsync();
+
+        var html = await (await _factory.CreateClient().GetAsync($"/Person?id={_aliceId}&usage=count")).Content.ReadAsStringAsync();
+
+        var chart = html[html.IndexOf("data-chart=\"deck-plays\"", StringComparison.Ordinal)..];
+        Assert.Contains("Atraxa - Jan 2024: 3</title>", chart);
+    }
+
+    [Fact]
     public async Task PersonPage_DeckPlaysChartShowsMessageWithoutPlays()
     {
         await SeedAsync();

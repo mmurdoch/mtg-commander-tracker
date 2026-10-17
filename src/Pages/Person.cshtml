@@ -20,12 +20,18 @@
     var plotWidth = chartWidth - left - right;
     var plotHeight = chartHeight - top - bottom;
     var monthCount = Model.PlayMonths.Count;
+    var percentUsage = Model.SelectedUsage == PersonModel.UsagePercent;
+    string? usageRoute = percentUsage ? null : PersonModel.UsageCount;
     var maxPlays = Model.DeckPlays.Count == 0 ? 1 : Math.Max(1, Model.DeckPlays.Max(d => d.Counts.Max()));
-    var tickStep = (int)Math.Ceiling(maxPlays / 5.0);
-    var yMax = (int)Math.Ceiling(maxPlays / (double)tickStep) * tickStep;
+    double Value(DeckMonthlyPlays deck, int i) => percentUsage ? (Model.MonthTotals[i] == 0 ? 0 : (double)deck.Counts[i] / Model.MonthTotals[i] * 100) : deck.Counts[i];
+    var maxPercent = Model.DeckPlays.Count == 0 ? 1 : Math.Max(1, Model.DeckPlays.Max(d => Enumerable.Range(0, d.Counts.Count).Max(i => Value(d, i))));
+    // Percent steps are multiples of 5 so the axis has at most five intervals.
+    var tickStep = percentUsage ? (int)Math.Ceiling(maxPercent / 25) * 5 : (int)Math.Ceiling(maxPlays / 5.0);
+    var yMax = (int)Math.Ceiling((percentUsage ? maxPercent : maxPlays) / (double)tickStep) * tickStep;
+    string Tip(DeckMonthlyPlays deck, int i) => percentUsage ? $"{Pct(Value(deck, i))}% ({deck.Counts[i]}/{Model.MonthTotals[i]})" : deck.Counts[i].ToString(CultureInfo.InvariantCulture);
     var labelStep = Math.Max(1, (int)Math.Ceiling(monthCount / (plotWidth / 64)));
     double X(int i) => monthCount == 1 ? left + plotWidth / 2 : left + plotWidth * i / (monthCount - 1);
-    double Y(int count) => top + plotHeight * (1 - (double)count / yMax);
+    double Y(double count) => top + plotHeight * (1 - (double)count / yMax);
     static string Num(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 }
 
@@ -39,7 +45,7 @@
 <div class="timeframe-select mb-4" role="group" aria-label="Timeframe">
     @foreach (var timeframe in WinCharts.Timeframes)
     {
-        <a class="timeframe-option" asp-page="/Person" asp-route-id="@Model.Person.Id" asp-route-timeframe="@(timeframe.Key == WinCharts.AllTime ? null : timeframe.Key)" aria-pressed="@(timeframe.Key == Model.SelectedTimeframe ? "true" : "false")">@timeframe.Label</a>
+        <a class="timeframe-option" asp-page="/Person" asp-route-id="@Model.Person.Id" asp-route-timeframe="@(timeframe.Key == WinCharts.AllTime ? null : timeframe.Key)" asp-route-usage="@usageRoute" aria-pressed="@(timeframe.Key == Model.SelectedTimeframe ? "true" : "false")">@timeframe.Label</a>
     }
 </div>
 
@@ -98,18 +104,22 @@
 
 <div class="mt-5" data-chart="deck-plays">
     <h2 class="h5">Deck plays by month</h2>
+    <div class="timeframe-select mb-3" role="group" aria-label="Deck plays unit">
+        <a class="timeframe-option" asp-page="/Person" asp-route-id="@Model.Person.Id" asp-route-timeframe="@(Model.SelectedTimeframe == WinCharts.AllTime ? null : Model.SelectedTimeframe)" aria-pressed="@(percentUsage ? "true" : "false")">% of games</a>
+        <a class="timeframe-option" asp-page="/Person" asp-route-id="@Model.Person.Id" asp-route-timeframe="@(Model.SelectedTimeframe == WinCharts.AllTime ? null : Model.SelectedTimeframe)" asp-route-usage="@PersonModel.UsageCount" aria-pressed="@(percentUsage ? "false" : "true")">Game count</a>
+    </div>
     @if (Model.DeckPlays.Count == 0)
     {
         <p class="text-muted small mb-0">No deck plays yet.</p>
     }
     else
     {
-        <svg class="line-chart" viewBox="0 0 @Num(chartWidth) @Num(chartHeight)" role="img" aria-label="Plays per month for each of @Model.Person!.Name's decks">
+        <svg class="line-chart" viewBox="0 0 @Num(chartWidth) @Num(chartHeight)" role="img" aria-label="@(percentUsage ? "Share of plays per month" : "Plays per month") for each of @Model.Person!.Name's decks">
             @for (var tick = 0; tick <= yMax; tick += tickStep)
             {
                 <line class="line-chart-grid" x1="@Num(left)" x2="@Num(chartWidth - right)" y1="@Num(Y(tick))" y2="@Num(Y(tick))" />
                 @* Razor treats a literal <text> element as a transition, so the SVG text nodes are emitted raw (numbers and dates only). *@
-                @Html.Raw($"<text class=\"line-chart-label\" x=\"{Num(left - 6)}\" y=\"{Num(Y(tick) + 4)}\" text-anchor=\"end\">{tick}</text>")
+                @Html.Raw($"<text class=\"line-chart-label\" x=\"{Num(left - 6)}\" y=\"{Num(Y(tick) + 4)}\" text-anchor=\"end\">{tick}{(percentUsage ? "%" : "")}</text>")
             }
             @for (var i = 0; i < monthCount; i += labelStep)
             {
@@ -119,13 +129,13 @@
             {
                 var deck = Model.DeckPlays[d];
                 var color = palette[d % palette.Length];
-                var points = deck.Counts.Select((c, i) => $"{Num(X(i))},{Num(Y(c))}").ToList();
+                var points = deck.Counts.Select((c, i) => $"{Num(X(i))},{Num(Y(Value(deck, i)))}").ToList();
                 <g class="line-chart-series" data-deck="@deck.DeckId" stroke="@color" fill="@color">
                     <polyline fill="none" stroke-width="2" points="@string.Join(" ", points)" />
                     <path class="line-chart-hit" d="@("M" + string.Join(" L", points))" />
                     @for (var i = 0; i < monthCount; i++)
                     {
-                        <circle cx="@Num(X(i))" cy="@Num(Y(deck.Counts[i]))" r="3.5"><title>@deck.Label - @Model.PlayMonths[i].ToString("MMM yyyy", CultureInfo.InvariantCulture): @deck.Counts[i]</title></circle>
+                        <circle cx="@Num(X(i))" cy="@Num(Y(Value(deck, i)))" r="3.5"><title>@deck.Label - @Model.PlayMonths[i].ToString("MMM yyyy", CultureInfo.InvariantCulture): @Tip(deck, i)</title></circle>
                     }
                 </g>
             }
