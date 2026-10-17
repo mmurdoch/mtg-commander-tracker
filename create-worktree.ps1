@@ -10,7 +10,8 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = (git -C $PSScriptRoot rev-parse --show-toplevel).Trim()
 $repoName = Split-Path $repoRoot -Leaf
-$worktreePath = Join-Path (Split-Path $repoRoot -Parent) "$repoName-$Name"
+$dirName = $Name -replace '[\\/]', '-'
+$worktreePath = Join-Path (Split-Path $repoRoot -Parent) "$repoName-$dirName"
 
 git check-ref-format --branch $Name *> $null
 if ($LASTEXITCODE -ne 0) {
