@@ -114,7 +114,7 @@ public class DeckMatchupsPageTests : IClassFixture<WebApplicationFactory<Program
     }
 
     [Fact]
-    public async Task OnGet_BreaksRecordsDownByGameSize()
+    public async Task OnGet_BreaksRecordsDownByPlayerCount()
     {
         await SeedAsync();
 
@@ -210,6 +210,7 @@ public class DeckMatchupsPageTests : IClassFixture<WebApplicationFactory<Program
             Assert.Contains($"data-players=\"{option}\"", html);
         }
         Assert.Contains("data-players=\"all\" aria-pressed=\"true\"", html);
+        Assert.Contains("id=\"playerFilterLabel\">Player count</div>", html);
         Assert.DoesNotContain("Back to decks", html);
     }
 

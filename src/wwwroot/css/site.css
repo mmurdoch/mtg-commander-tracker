@@ -199,6 +199,11 @@ th[aria-sort=descending] .sort-button::after {
     color: var(--primary);
 }
 
+a.timeframe-option {
+    display: inline-block;
+    text-decoration: none;
+}
+
 .timeframe-option[aria-pressed=true] {
     background: var(--primary);
     color: #fff;
@@ -267,6 +272,19 @@ th[aria-sort=descending] .sort-button::after {
 
 .chart-bar-below {
     background: #e74a3b;
+}
+
+/* Behind bars precede the main bar in the markup, so equal z-index keeps them underneath. */
+.chart-bar-overall-front {
+    z-index: 3;
+}
+
+.chart-bar-overall-above {
+    background: #a4e8cf;
+}
+
+.chart-bar-overall-below {
+    background: #f5b5ae;
 }
 
 .chart-value {

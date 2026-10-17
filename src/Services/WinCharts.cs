@@ -3,18 +3,18 @@ using mtg_game_tracker.Data;
 
 namespace mtg_game_tracker.Services
 {
-    public record ChartEntry(string Label, int Games, int Wins, int? DeckId = null);
+    public record ChartEntry(string Label, int Games, int Wins, int? DeckId = null, int? PersonId = null);
 
     // Months is the look-back window; null means all time.
     public record ChartTimeframe(string Key, string Label, int? Months);
 
-    // Entries keyed by game size (2, 3 or 4 players). Seats are listed in turn order.
+    // Entries keyed by player count (2, 3 or 4). Seats are listed in turn order.
     public record WinCharts(
         IReadOnlyDictionary<int, IReadOnlyList<ChartEntry>> People,
         IReadOnlyDictionary<int, IReadOnlyList<ChartEntry>> Decks,
         IReadOnlyDictionary<int, IReadOnlyList<ChartEntry>> Seats)
     {
-        public static readonly int[] GameSizes = { 2, 3, 4 };
+        public static readonly int[] PlayerCounts = { 2, 3, 4 };
         public static readonly string[] SeatNames = { "First", "Second", "Third", "Fourth" };
         public const int MaxPeople = 6;
         public const string AllTime = "all";
@@ -29,9 +29,9 @@ namespace mtg_game_tracker.Services
         };
 
         public static WinCharts Empty { get; } = new(
-            GameSizes.ToDictionary(s => s, _ => (IReadOnlyList<ChartEntry>)new List<ChartEntry>()),
-            GameSizes.ToDictionary(s => s, _ => (IReadOnlyList<ChartEntry>)new List<ChartEntry>()),
-            GameSizes.ToDictionary(s => s, _ => (IReadOnlyList<ChartEntry>)new List<ChartEntry>()));
+            PlayerCounts.ToDictionary(s => s, _ => (IReadOnlyList<ChartEntry>)new List<ChartEntry>()),
+            PlayerCounts.ToDictionary(s => s, _ => (IReadOnlyList<ChartEntry>)new List<ChartEntry>()),
+            PlayerCounts.ToDictionary(s => s, _ => (IReadOnlyList<ChartEntry>)new List<ChartEntry>()));
 
         public static async Task<IReadOnlyDictionary<string, WinCharts>> LoadByTimeframeAsync(
             AppDbContext db, IReadOnlyDictionary<int, string> deckLabels, DateTime today)
@@ -61,7 +61,7 @@ namespace mtg_game_tracker.Services
             var peopleCharts = new Dictionary<int, IReadOnlyList<ChartEntry>>();
             var deckCharts = new Dictionary<int, IReadOnlyList<ChartEntry>>();
             var seatCharts = new Dictionary<int, IReadOnlyList<ChartEntry>>();
-            foreach (var size in GameSizes)
+            foreach (var size in PlayerCounts)
             {
                 var ofSize = games.Where(g => g.Seats.Count == size).ToList();
 
@@ -69,7 +69,7 @@ namespace mtg_game_tracker.Services
                     .Select(p =>
                     {
                         var played = ofSize.Where(g => g.Seats.Any(s => s.PlayerId == p.Id)).ToList();
-                        return new ChartEntry(p.Name, played.Count, played.Count(g => g.WinnerId == p.Id));
+                        return new ChartEntry(p.Name, played.Count, played.Count(g => g.WinnerId == p.Id), PersonId: p.Id);
                     })
                     .Where(e => e.Games > 0)
                     .OrderByDescending(e => e.Games)

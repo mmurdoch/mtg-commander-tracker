@@ -23,7 +23,7 @@
         @foreach (var person in Model.People)
         {
             <tr>
-                <td>@person.Person.Name</td>
+                <td><a asp-page="/Person" asp-route-id="@person.Person.Id">@person.Person.Name</a></td>
                 <td data-sort-value="@person.GamesPlayed">@person.GamesPlayed</td>
                 @foreach (var record in new[] { person.TwoPlayer, person.ThreePlayer, person.FourPlayer })
                 {

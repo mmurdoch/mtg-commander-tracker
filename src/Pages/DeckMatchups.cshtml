@@ -13,10 +13,10 @@
         <input type="range" class="form-range min-games-slider" id="minGames" min="1" max="40" step="1" value="5" />
     </div>
     <div>
-        <div class="form-label small mb-1" id="playerFilterLabel">Players</div>
+        <div class="form-label small mb-1" id="playerFilterLabel">Player count</div>
         <div class="timeframe-select" id="player-filter" role="group" aria-labelledby="playerFilterLabel">
             <button type="button" class="timeframe-option" data-players="all" aria-pressed="true">All</button>
-            @foreach (var size in WinCharts.GameSizes)
+            @foreach (var size in WinCharts.PlayerCounts)
             {
                 <button type="button" class="timeframe-option" data-players="@size" aria-pressed="false">@size</button>
             }

@@ -8,7 +8,7 @@
     var IMAGE_URL = 'https://api.scryfall.com/cards/named?format=image&version=normal&exact=';
     var players = 'all';
 
-    // Swaps in the counts for the chosen game size.
+    // Swaps in the counts for the chosen player count.
     function forPlayers(matchup) {
         if (players === 'all') return matchup;
         var record = (matchup.bySize || {})[players] || { games: 0, wins: 0, losses: 0 };

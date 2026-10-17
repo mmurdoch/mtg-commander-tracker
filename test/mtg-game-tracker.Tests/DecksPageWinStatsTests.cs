@@ -107,7 +107,7 @@ public class DecksPageWinStatsTests : IClassFixture<WebApplicationFactory<Progra
     }
 
     [Fact]
-    public async Task OnGet_CountsPlayersWithoutDeckTowardGameSizeAndIgnoresLargeGames()
+    public async Task OnGet_CountsPlayersWithoutDeckTowardPlayerCountAndIgnoresLargeGames()
     {
         await SeedAsync();
 

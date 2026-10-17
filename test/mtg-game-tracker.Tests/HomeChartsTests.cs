@@ -160,6 +160,23 @@ public class HomeChartsTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task Charts_PersonEntriesCarryPersonIdAndHomePageExposesPersonUrl()
+    {
+        await SeedAsync();
+
+        var charts = await LoadChartsAsync();
+        int zedId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            zedId = scope.ServiceProvider.GetRequiredService<AppDbContext>().People.Single(p => p.Name == "Zed").Id;
+        }
+        var html = await (await _factory.CreateClient().GetAsync("/")).Content.ReadAsStringAsync();
+
+        Assert.Equal(zedId, charts.People[2].Single(e => e.Label == "Zed").PersonId);
+        Assert.Equal(3, Regex.Matches(html, "data-chart=\"people\"[^>]*data-person-url=\"/Person\"").Count);
+    }
+
+    [Fact]
     public async Task HomePage_RendersSixChartsAndDeckSlidersWithBounds()
     {
         await SeedAsync();
@@ -251,7 +268,7 @@ public class HomeChartsTests : IClassFixture<WebApplicationFactory<Program>>
         var byTimeframe = await WinCharts.LoadByTimeframeAsync(db, new Dictionary<int, string>(), new DateTime(2025, 6, 15));
 
         Assert.NotEmpty(byTimeframe["all"].People[2]);
-        Assert.All(WinCharts.GameSizes, size => Assert.Empty(byTimeframe["1m"].People[size]));
+        Assert.All(WinCharts.PlayerCounts, size => Assert.Empty(byTimeframe["1m"].People[size]));
     }
 
     [Fact]
@@ -306,7 +323,7 @@ public class HomeChartsTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task Charts_SeatsCountWinsBySeatPositionForEachGameSize()
+    public async Task Charts_SeatsCountWinsBySeatPositionForEachPlayerCount()
     {
         await SeedAsync();
 

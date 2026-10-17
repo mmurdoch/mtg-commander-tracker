@@ -121,6 +121,28 @@ test('deck chart labels link to the deck matchups page', () => {
   assert.equal(chart('people', 2).querySelector('a.chart-label'), null);
 });
 
+test('people chart labels link to the person page', () => {
+  const { chart, document } = setup({
+    people: { 2: [{ label: 'Alice', games: 5, wins: 3, personId: 4 }], 3: [], 4: [] },
+    decks: { 2: [{ label: 'Atraxa', games: 5, wins: 3, deckId: 7 }], 3: [], 4: [] },
+  });
+  chart('people', 2).setAttribute('data-person-url', '/Person');
+  document.querySelector('[data-timeframe="all"]').click();
+
+  const link = chart('people', 2).querySelector('a.chart-label');
+  assert.equal(link.getAttribute('href'), '/Person?id=4');
+  assert.equal(link.textContent, 'Alice');
+  assert.equal(chart('decks', 2).querySelector('a.chart-label'), null);
+});
+
+test('people chart labels stay plain text when entries carry no person id', () => {
+  const { chart, document } = setup();
+  chart('people', 2).setAttribute('data-person-url', '/Person');
+  document.querySelector('[data-timeframe="all"]').click();
+
+  assert.equal(chart('people', 2).querySelector('a.chart-label'), null);
+});
+
 test('people chart sizes bars by win percentage', () => {
   const { chart } = setup();
 

@@ -12,7 +12,7 @@ namespace mtg_game_tracker.Pages
     public record MatchupRecord(int Games, int Wins, int Losses);
 
     // Wins and Losses are from the selected deck's point of view; other games were drawn or won by a third deck.
-    // BySize is keyed by game size (2, 3 or 4 players); the top-level counts cover games of every size.
+    // BySize is keyed by player count (2, 3 or 4); the top-level counts cover games of every player count.
     public record DeckMatchup(int DeckId, string Label, string Commander, string? SecondCommander, int Games, int Wins, int Losses, IReadOnlyDictionary<int, MatchupRecord> BySize);
 
     public class DeckMatchupsModel : PageModel
@@ -74,7 +74,7 @@ namespace mtg_game_tracker.Pages
                 {
                     var d = Describe(byId[t.Key]);
                     var total = allGames[t.Key];
-                    var bySize = WinCharts.GameSizes.ToDictionary(s => s, s => t.Value.GetValueOrDefault(s, new MatchupRecord(0, 0, 0)));
+                    var bySize = WinCharts.PlayerCounts.ToDictionary(s => s, s => t.Value.GetValueOrDefault(s, new MatchupRecord(0, 0, 0)));
                     return new DeckMatchup(d.DeckId, d.Label, d.Commander, d.SecondCommander, total.Games, total.Wins, total.Losses, bySize);
                 })
                 .OrderBy(m => m.Label, StringComparer.OrdinalIgnoreCase)

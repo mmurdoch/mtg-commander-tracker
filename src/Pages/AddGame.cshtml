@@ -107,9 +107,9 @@
 
     <h3 class="h5">People</h3>
     <div class="row g-4 mb-5">
-        @foreach (var size in WinCharts.GameSizes.OrderDescending())
+        @foreach (var size in WinCharts.PlayerCounts.OrderDescending())
         {
-            <div class="col-12 col-lg-4" data-chart="people" data-players="@size">
+            <div class="col-12 col-lg-4" data-chart="people" data-players="@size" data-person-url="@Url.Page("/Person")">
                 <h4 class="h6">@size-player win %</h4>
                 <div class="chart-bars"></div>
             </div>
@@ -118,7 +118,7 @@
 
     <h3 class="h5">Decks</h3>
     <div class="row g-4 mb-5">
-        @foreach (var size in WinCharts.GameSizes.OrderDescending())
+        @foreach (var size in WinCharts.PlayerCounts.OrderDescending())
         {
             <div class="col-12 col-lg-4" data-chart="decks" data-players="@size" data-deck-url="@Url.Page("/DeckMatchups")">
                 <h4 class="h6">@size-player win %</h4>
@@ -131,7 +131,7 @@
 
     <h3 class="h5">Seat position</h3>
     <div class="row g-4">
-        @foreach (var size in WinCharts.GameSizes.OrderDescending())
+        @foreach (var size in WinCharts.PlayerCounts.OrderDescending())
         {
             <div class="col-12 col-lg-4" data-chart="seats" data-players="@size">
                 <h4 class="h6">@size-player win %</h4>

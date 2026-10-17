@@ -23,6 +23,7 @@
         var bars = container.querySelector('.chart-bars');
         var players = parseInt(container.getAttribute('data-players'), 10);
         var deckUrl = container.getAttribute('data-deck-url');
+        var personUrl = container.getAttribute('data-person-url');
         bars.textContent = '';
         if (entries.length === 0) {
             bars.appendChild(element('p', 'text-muted small mb-0', emptyMessage));
@@ -35,9 +36,11 @@
         entries.forEach(function (entry, index) {
             var pct = percent(entry);
             var row = element('div', 'chart-row');
-            var linked = deckUrl && entry.deckId != null;
-            var label = element(linked ? 'a' : 'span', 'chart-label', entry.label);
-            if (linked) label.href = deckUrl + '?id=' + entry.deckId;
+            var href = deckUrl && entry.deckId != null ? deckUrl + '?id=' + entry.deckId
+                : personUrl && entry.personId != null ? personUrl + '?id=' + entry.personId
+                : null;
+            var label = element(href ? 'a' : 'span', 'chart-label', entry.label);
+            if (href) label.href = href;
             label.title = entry.label;
             row.appendChild(label);
             row.appendChild(element('div', 'chart-track'));

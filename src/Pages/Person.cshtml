@@ -1,0 +1,84 @@
+@page
+@using System.Globalization
+@using mtg_game_tracker.Services
+@model PersonModel
+@{
+    static string Pct(double value) => value.ToString("0", CultureInfo.InvariantCulture);
+
+    BarRow WinRow(string label, ChartEntry entry, int players) => new(
+        label,
+        entry.Games == 0 ? 0 : (double)entry.Wins / entry.Games * 100,
+        entry.Games == 0 ? "-" : $"{Pct((double)entry.Wins / entry.Games * 100)}% ({entry.Wins}/{entry.Games})",
+        100.0 / players);
+
+    var deckTotal = Model.DeckShares.Sum(d => d.Games);
+    var winRows = WinCharts.PlayerCounts.Select((size, i) => WinRow(Model.WinsByPlayerCount[i].Label, Model.WinsByPlayerCount[i], size)).ToList();
+    var deckRows = Model.DeckShares.Select(d => new BarRow(d.Label, d.Percent, $"{Pct(d.Percent)}% ({d.Games}/{deckTotal})")).ToList();
+}
+
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="h3">@Model.Person!.Name</h1>
+    </div>
+    <a asp-page="/People" class="btn btn-outline-primary">All people</a>
+</div>
+
+<div class="timeframe-select mb-4" role="group" aria-label="Timeframe">
+    @foreach (var timeframe in WinCharts.Timeframes)
+    {
+        <a class="timeframe-option" asp-page="/Person" asp-route-id="@Model.Person.Id" asp-route-timeframe="@(timeframe.Key == WinCharts.AllTime ? null : timeframe.Key)" aria-pressed="@(timeframe.Key == Model.SelectedTimeframe ? "true" : "false")">@timeframe.Label</a>
+    }
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-12 col-lg-6" data-chart="win-percent">
+        <h2 class="h5">Win % by player count</h2>
+        @if (Model.WinsByPlayerCount.All(e => e.Games == 0))
+        {
+            <p class="text-muted small mb-0">No games yet.</p>
+        }
+        else
+        {
+            <partial name="_BarChart" model="winRows" />
+        }
+    </div>
+    <div class="col-12 col-lg-6" data-chart="deck-share">
+        <h2 class="h5">Decks played</h2>
+        @if (deckRows.Count == 0)
+        {
+            <p class="text-muted small mb-0">No decks recorded.</p>
+        }
+        else
+        {
+            <partial name="_BarChart" model="deckRows" />
+        }
+    </div>
+</div>
+
+<h2 class="h5">Win % by seat position</h2>
+<div class="row g-4">
+    @foreach (var size in WinCharts.PlayerCounts.OrderDescending())
+    {
+        var overall = Model.OverallSeats[size];
+        var seatRows = Model.Seats[size]
+            .Select((e, i) => new BarRow(
+                e.Label,
+                e.Games == 0 ? 0 : (double)e.Wins / e.Games * 100,
+                e.Games == 0 ? "-" : $"{Pct((double)e.Wins / e.Games * 100)}% ({e.Wins}/{e.Games})",
+                100.0 / size,
+                i < overall.Count && overall[i].Games > 0 ? (double)overall[i].Wins / overall[i].Games * 100 : null,
+                i < overall.Count && overall[i].Games > 0 ? $"{Model.Person!.Name}: {(e.Games == 0 ? "-" : $"{Pct((double)e.Wins / e.Games * 100)}% ({e.Wins}/{e.Games})")}\nOverall: {Pct((double)overall[i].Wins / overall[i].Games * 100)}% ({overall[i].Wins}/{overall[i].Games})" : null))
+            .ToList();
+        <div class="col-12 col-lg-4" data-chart="seats" data-players="@size">
+            <h3 class="h6">@size-player win %</h3>
+            @if (Model.Seats[size].All(e => e.Games == 0))
+            {
+                <p class="text-muted small mb-0">No games yet.</p>
+            }
+            else
+            {
+                <partial name="_BarChart" model="seatRows" />
+            }
+        </div>
+    }
+</div>

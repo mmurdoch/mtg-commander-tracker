@@ -1,0 +1,25 @@
+@using System.Globalization
+@model IReadOnlyList<BarRow>
+
+<div class="chart-bars">
+    @for (var i = 0; i < Model.Count; i++)
+    {
+        var row = Model[i];
+        var gridRow = $"grid-row: {i + 1}";
+        <div class="chart-row">
+            <span class="chart-label" style="@gridRow" title="@row.Label">@row.Label</span>
+            <div class="chart-track" style="@gridRow"></div>
+            @if (row.ExpectedPercent is double expected)
+            {
+                @* An absolutely positioned item needs an explicit end line, or it stretches to the bottom of the grid. *@
+                <div class="chart-expected" style="left: @(expected.ToString("0.####", CultureInfo.InvariantCulture))%; grid-row: @(i + 1) / @(i + 2)"></div>
+            }
+            @if (row.OverallPercent is double overall)
+            {
+                <div class="chart-bar chart-bar-overall @(row.OverallInFront ? "chart-bar-overall-front" : "chart-bar-overall-behind") @(row.OverallAbove ? "chart-bar-overall-above" : "chart-bar-overall-below")" style="width: @(overall.ToString("0.####", CultureInfo.InvariantCulture))%; @gridRow" title="@row.Tooltip"></div>
+            }
+            <div class="chart-bar @(row.ExpectedPercent is null ? "" : row.Above ? "chart-bar-above" : "chart-bar-below")" style="width: @(row.Percent.ToString("0.####", CultureInfo.InvariantCulture))%; @gridRow" title="@row.Tooltip"></div>
+            <span class="chart-value" style="@gridRow">@row.Text</span>
+        </div>
+    }
+</div>
