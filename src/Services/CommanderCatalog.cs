@@ -15,7 +15,7 @@ namespace mtg_game_tracker.Services
     {
         public const string HttpClientName = "scryfall";
 
-        private static readonly Uri SearchUri = new("https://api.scryfall.com/cards/search?q=f%3Aedh+t%3Alegendary+t%3Acreature&unique=cards");
+        private static readonly Uri SearchUri = new("https://api.scryfall.com/cards/search?q=" + Uri.EscapeDataString("f:edh (is:commander or (t:legendary t:creature))") + "&unique=cards");
         private static readonly TimeSpan MaxAge = TimeSpan.FromHours(24);
         private static readonly TimeSpan PageDelay = TimeSpan.FromMilliseconds(100);
 

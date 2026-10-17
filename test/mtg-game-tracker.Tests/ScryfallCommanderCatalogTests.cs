@@ -133,7 +133,7 @@ public sealed class ScryfallCommanderCatalogTests : IDisposable
         Assert.Equal("api.scryfall.com", first.RequestUri!.Host);
         Assert.Equal("/cards/search", first.RequestUri.AbsolutePath);
         var query = System.Web.HttpUtility.ParseQueryString(first.RequestUri.Query);
-        Assert.Equal("f:edh t:legendary t:creature", query["q"]);
+        Assert.Equal("f:edh (is:commander or (t:legendary t:creature))", query["q"]);
         Assert.Equal("cards", query["unique"]);
         Assert.NotEmpty(first.Headers.UserAgent);
         Assert.Contains(first.Headers.Accept, a => a.MediaType == "application/json");
