@@ -83,6 +83,17 @@ public class AddGamePageIntegrationTests : IClassFixture<WebApplicationFactory<P
         Assert.Contains("value=\"5\"", spinner.Value);
     }
 
+    [Fact]
+    public async Task AddGamePage_WinnerRadioOutlineMatchesTextColor()
+    {
+        var response = await _factory.CreateClient().GetAsync("/css/site.css");
+        response.EnsureSuccessStatusCode();
+        var css = await response.Content.ReadAsStringAsync();
+
+        Assert.Contains(".winner-radio", css);
+        Assert.Contains("border: 1px solid var(--text-body);", css);
+    }
+
     [Theory]
     [InlineData("2", 5, 2)]
     [InlineData("3", 5, 3)]
