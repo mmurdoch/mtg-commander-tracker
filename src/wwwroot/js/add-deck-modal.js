@@ -6,6 +6,7 @@
     var submit = document.getElementById('newDeckSubmit');
     var general = document.getElementById('newDeckError');
     var nameInput = document.getElementById('NewDeckName');
+    var deckListUrlInput = document.getElementById('NewDeckListUrl');
     var combos = Array.prototype.slice.call(form.querySelectorAll('[data-modal-combo]'));
     var originRow = null;
     var commandersLoading = null;
@@ -49,6 +50,7 @@
     function reset() {
         clearErrors();
         nameInput.value = '';
+        deckListUrlInput.value = '';
         ['commander', 'secondCommander', 'ownerId'].forEach(function (name) { setComboValue(name, ''); });
     }
 

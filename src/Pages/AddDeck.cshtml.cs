@@ -38,22 +38,26 @@ namespace mtg_game_tracker.Pages
         [BindProperty]
         public int? OwnerId { get; set; }
 
+        [BindProperty]
+        public string? DeckListUrl { get; set; }
+
         public async Task<IActionResult> OnGetAsync()
         {
             await LoadListsAsync();
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync(string? name = null, string? commander = null, int? ownerId = null, string? secondCommander = null)
+        public async Task<IActionResult> OnPostAsync(string? name = null, string? commander = null, int? ownerId = null, string? secondCommander = null, string? deckListUrl = null)
         {
             var deckName = name ?? Name;
             var deckCommander = commander ?? Commander;
             var selectedOwnerId = ownerId ?? OwnerId;
             var deckSecondCommander = secondCommander ?? SecondCommander;
+            var selectedDeckListUrl = deckListUrl ?? DeckListUrl;
 
             await LoadListsAsync();
 
-            var draft = DeckFactory.Build(deckName, deckCommander, deckSecondCommander, selectedOwnerId, CommanderColors);
+            var draft = DeckFactory.Build(deckName, deckCommander, deckSecondCommander, selectedOwnerId, CommanderColors, selectedDeckListUrl);
             ColorIdentity = draft.ColorIdentity;
             foreach (var (key, message) in draft.Errors)
             {
@@ -81,4 +85,3 @@ namespace mtg_game_tracker.Pages
         }
     }
 }
-

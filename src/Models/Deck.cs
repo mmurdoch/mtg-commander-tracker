@@ -6,6 +6,7 @@ namespace mtg_game_tracker.Models
         public string? Name { get; set; }
         public string Commander { get; set; } = string.Empty;
         public string? SecondCommander { get; set; }
+        public string? DeckListUrl { get; set; }
         public int OwnerId { get; set; }
         public Person? Owner { get; set; }
         public int ColorDataId { get; set; }
