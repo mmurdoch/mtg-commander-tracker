@@ -61,14 +61,32 @@ public class AddPersonAndDeckTests
         await using var _ = context;
         var model = new AddDeckModel(context, Catalog());
 
-        var result = await model.OnPostAsync("Arcane", "Niv-Mizzet", owner.Id);
+        var result = await model.OnPostAsync("Arcane", "Niv-Mizzet", owner.Id, deckListUrl: "https://example.com/deck");
 
         Assert.IsType<RedirectToPageResult>(result);
         var saved = await context.Decks.SingleAsync();
         Assert.Equal("Arcane", saved.Name);
         Assert.Equal("Niv-Mizzet", saved.Commander);
+        Assert.Equal("https://example.com/deck", saved.DeckListUrl);
         Assert.Equal(owner.Id, saved.OwnerId);
         Assert.Equal(ColorId("Izzet"), saved.ColorDataId);
+    }
+
+    [Theory]
+    [InlineData("not a url")]
+    [InlineData("/relative/path")]
+    [InlineData("ftp://example.com/deck")]
+    public async Task AddDeckPageWithInvalidDeckListUrlReturnsValidationErrorAndDoesNotPersist(string deckListUrl)
+    {
+        var (context, owner) = await CreateContextWithOwnerAsync();
+        await using var _ = context;
+        var model = new AddDeckModel(context, Catalog());
+
+        var result = await model.OnPostAsync("Arcane", "Niv-Mizzet", owner.Id, deckListUrl: deckListUrl);
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState[nameof(model.DeckListUrl)]?.Errors.Count > 0);
+        Assert.False(await context.Decks.AnyAsync());
     }
 
     [Fact]

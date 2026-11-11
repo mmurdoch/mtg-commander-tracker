@@ -44,16 +44,35 @@ public class AddGameNewDeckTests
         await using var _ = context;
         var model = new AddGameModel(context, Catalog());
 
-        var result = await model.OnPostAddDeckAsync("Arcane", "Niv-Mizzet", null, alice.Id);
+        var result = await model.OnPostAddDeckAsync("Arcane", "Niv-Mizzet", null, alice.Id, "https://example.com/deck");
 
         var json = Assert.IsType<JsonResult>(result);
         Assert.Null(json.StatusCode);
         var response = Assert.IsType<AddDeckResponse>(json.Value);
         var saved = await context.Decks.SingleAsync();
+        Assert.Equal("https://example.com/deck", saved.DeckListUrl);
         Assert.Equal(ColorIdentitySeeder.All.Single(c => c.Name == "Izzet").Id, saved.ColorDataId);
         Assert.Equal(saved.Id, response.DeckId);
         var option = Assert.Single(response.Decks);
         Assert.Equal(new DeckOption(saved.Id, "Niv-Mizzet (Arcane)", alice.Id), option);
+    }
+
+    [Theory]
+    [InlineData("not a url")]
+    [InlineData("/relative/path")]
+    public async Task AddDeckHandler_RejectsInvalidDeckListUrl(string deckListUrl)
+    {
+        var (context, alice, _) = await CreateContextAsync();
+        await using var _ = context;
+        var model = new AddGameModel(context, Catalog());
+
+        var result = Assert.IsType<JsonResult>(
+            await model.OnPostAddDeckAsync("Arcane", "Niv-Mizzet", null, alice.Id, deckListUrl));
+
+        Assert.Equal(400, result.StatusCode);
+        var errors = Assert.IsType<AddDeckErrors>(result.Value);
+        Assert.Contains(nameof(Deck.DeckListUrl), errors.Errors.Keys);
+        Assert.False(await context.Decks.AnyAsync());
     }
 
     [Fact]
@@ -193,5 +212,14 @@ public class AddGameNewDeckPageTests : IClassFixture<WebApplicationFactory<Progr
         var html = await GetHtmlAsync();
 
         Assert.Equal(20, Regex.Matches(html, "<div[^>]*data-combo").Count);
+    }
+
+    [Fact]
+    public async Task AddGamePage_NewDeckModalIncludesOptionalUrlValidatedDeckListField()
+    {
+        var html = await GetHtmlAsync();
+
+        Assert.Matches(new Regex("<input(?=[^>]*id=\"NewDeckListUrl\")(?=[^>]*name=\"deckListUrl\")(?=[^>]*type=\"url\")[^>]*>"), html);
+        Assert.Contains("data-error-for=\"DeckListUrl\"", html);
     }
 }

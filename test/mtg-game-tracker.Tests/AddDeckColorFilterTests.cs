@@ -117,6 +117,7 @@ public class AddDeckColorFilterTests : IClassFixture<WebApplicationFactory<Progr
         {
             ["Commander"] = "Atraxa, Praetors' Voice",
             ["SecondCommander"] = "Meren of Clan Nel Toth",
+            ["DeckListUrl"] = "https://example.com/atraxa",
             ["OwnerId"] = ownerId.ToString(),
             ["__RequestVerificationToken"] = token.Groups[1].Value,
         }));
@@ -125,6 +126,7 @@ public class AddDeckColorFilterTests : IClassFixture<WebApplicationFactory<Progr
         using var verifyScope = _factory.Services.CreateScope();
         var deck = await verifyScope.ServiceProvider.GetRequiredService<AppDbContext>().Decks.SingleAsync();
         Assert.Equal(ColorIdentitySeeder.All.Single(c => c.Name == "Witch-Maw").Id, deck.ColorDataId);
+        Assert.Equal("https://example.com/atraxa", deck.DeckListUrl);
     }
 
     [Fact]
@@ -162,7 +164,7 @@ public class AddDeckColorFilterTests : IClassFixture<WebApplicationFactory<Progr
     {
         var html = await GetAddDeckHtmlAsync();
 
-        var order = new[] { "id=\"Name\"", "id=\"CommanderFilter\"", "id=\"SecondCommanderFilter\"", "id=\"ColorIdentityDisplay\"", "id=\"OwnerFilter\"" }
+        var order = new[] { "id=\"Name\"", "id=\"CommanderFilter\"", "id=\"SecondCommanderFilter\"", "id=\"ColorIdentityDisplay\"", "id=\"DeckListUrl\"", "id=\"OwnerFilter\"" }
             .Select(marker => html.IndexOf(marker, StringComparison.Ordinal))
             .ToArray();
 
@@ -176,7 +178,8 @@ public class AddDeckColorFilterTests : IClassFixture<WebApplicationFactory<Progr
         var html = await GetAddDeckHtmlAsync();
 
         Assert.Matches(new Regex("<div class=\"col-12\">\\s*<label[^>]*>Name \\(optional\\)</label>"), html);
-        Assert.Equal(4, Regex.Matches(html, "<div class=\"col-12 col-md-6\">").Count);
+        Assert.Equal(5, Regex.Matches(html, "<div class=\"col-12 col-md-6\">").Count);
+        Assert.Matches(new Regex("<input(?=[^>]*id=\"DeckListUrl\")(?=[^>]*type=\"url\")[^>]*>"), html);
     }
 
     [Fact]

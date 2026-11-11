@@ -113,8 +113,8 @@ public class GamesPageIntegrationTests : IClassFixture<WebApplicationFactory<Pro
         var html = await (await client.GetAsync("/Games")).Content.ReadAsStringAsync();
 
         Assert.Contains("Atraxa (Poison Pals)", html);
-        Assert.Contains("Meren of Clan Nel Toth <span", html);
-        Assert.Contains("Korvold <span", html);
+        Assert.Contains("Meren of Clan Nel Toth</a>", html);
+        Assert.Contains("Korvold</a>", html);
         Assert.Contains("Krenko / Tana (Goblin Party)", html);
         Assert.Contains("Alice", html);
         Assert.Contains("Dave", html);
@@ -126,6 +126,26 @@ public class GamesPageIntegrationTests : IClassFixture<WebApplicationFactory<Pro
         var winnerEntry = jan2024.Substring(jan2024.IndexOf("game-winner", StringComparison.Ordinal));
         Assert.True(winnerEntry.IndexOf("Alice", StringComparison.Ordinal) < winnerEntry.IndexOf("Bob", StringComparison.Ordinal));
         Assert.DoesNotContain("Bob", winnerEntry.Substring(0, winnerEntry.IndexOf("Alice", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task GamesPage_LinksDeckAndPlayerNamesToTheirPages()
+    {
+        await SeedAsync();
+        int aliceId;
+        int aliceDeckId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            aliceId = (await db.People.SingleAsync(p => p.Name == "Alice")).Id;
+            aliceDeckId = (await db.Decks.SingleAsync(d => d.Commander == "Atraxa")).Id;
+        }
+
+        var client = _factory.CreateClient();
+        var html = await (await client.GetAsync("/Games")).Content.ReadAsStringAsync();
+
+        Assert.Contains($"<a href=\"/Deck?id={aliceDeckId}\">Atraxa (Poison Pals)</a>", html);
+        Assert.Contains($"<a href=\"/Person?id={aliceId}\">Alice</a>", html);
     }
 
     [Fact]

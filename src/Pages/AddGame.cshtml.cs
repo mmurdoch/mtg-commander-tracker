@@ -127,10 +127,10 @@ namespace mtg_game_tracker.Pages
             return new JsonResult(options);
         }
 
-        public async Task<IActionResult> OnPostAddDeckAsync(string? name, string? commander, string? secondCommander, int? ownerId)
+        public async Task<IActionResult> OnPostAddDeckAsync(string? name, string? commander, string? secondCommander, int? ownerId, string? deckListUrl = null)
         {
             var colors = await _commanderCatalog.GetColorIdentitiesAsync(HttpContext?.RequestAborted ?? default);
-            var draft = DeckFactory.Build(name, commander, secondCommander, ownerId, colors);
+            var draft = DeckFactory.Build(name, commander, secondCommander, ownerId, colors, deckListUrl);
             if (draft.Deck is null || draft.Errors.Count > 0)
             {
                 return new JsonResult(new AddDeckErrors(draft.Errors)) { StatusCode = StatusCodes.Status400BadRequest };

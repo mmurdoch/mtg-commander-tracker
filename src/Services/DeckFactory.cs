@@ -13,10 +13,15 @@ namespace mtg_game_tracker.Services
             string? commander,
             string? secondCommander,
             int? ownerId,
-            IReadOnlyDictionary<string, string> commanderColors)
+            IReadOnlyDictionary<string, string> commanderColors,
+            string? deckListUrl = null)
         {
             var errors = new Dictionary<string, string>();
             ColorData? identity = null;
+            if (!DeckListUrlValidator.TryNormalize(deckListUrl, out var normalizedDeckListUrl))
+            {
+                errors[nameof(Deck.DeckListUrl)] = "Please enter a valid URL.";
+            }
 
             if (string.IsNullOrWhiteSpace(commander))
             {
@@ -42,6 +47,7 @@ namespace mtg_game_tracker.Services
                 Name = string.IsNullOrWhiteSpace(name) ? null : name.Trim(),
                 Commander = commander!.Trim(),
                 SecondCommander = string.IsNullOrWhiteSpace(secondCommander) ? null : secondCommander.Trim(),
+                DeckListUrl = normalizedDeckListUrl,
                 OwnerId = ownerId!.Value,
                 ColorDataId = identity.Id
             };

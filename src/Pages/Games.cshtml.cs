@@ -38,7 +38,9 @@ namespace mtg_game_tracker.Pages
                         .OrderBy(p => p.Id)
                         .Select(p => new GamePlayerViewModel
                         {
+                            PersonId = p.PlayerId,
                             PersonName = p.Player?.Name ?? "Unknown",
+                            DeckId = p.DeckId,
                             DeckName = p.Deck is null ? "No deck" : p.Deck.DisplayName,
                             IsWinner = g.WinnerId.HasValue && p.PlayerId == g.WinnerId
                         })
@@ -72,7 +74,9 @@ namespace mtg_game_tracker.Pages
 
     public class GamePlayerViewModel
     {
+        public int PersonId { get; set; }
         public string PersonName { get; set; } = string.Empty;
+        public int? DeckId { get; set; }
         public string DeckName { get; set; } = string.Empty;
         public bool IsWinner { get; set; }
     }

@@ -37,7 +37,17 @@
                 @foreach (var player in game.Players)
                 {
                     <li class="list-group-item d-flex justify-content-between align-items-center @(player.IsWinner ? "game-winner list-group-item-success fw-bold" : "")">
-                        <span>@player.DeckName <span class="text-muted fw-normal">&mdash; @player.PersonName</span></span>
+                        <span>
+                            @if (player.DeckId is int deckId)
+                            {
+                                <a asp-page="/Deck" asp-route-id="@deckId">@player.DeckName</a>
+                            }
+                            else
+                            {
+                                @player.DeckName
+                            }
+                            <span class="text-muted fw-normal">&mdash; <a asp-page="/Person" asp-route-id="@player.PersonId">@player.PersonName</a></span>
+                        </span>
                         @if (player.IsWinner)
                         {
                             <span class="badge text-bg-success">Winner</span>

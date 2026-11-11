@@ -32,6 +32,12 @@ using (var scope = app.Services.CreateScope())
         context.Database.ExecuteSqlRaw("ALTER TABLE Decks ADD COLUMN SecondCommander TEXT NULL");
     }
 
+    if (context.Database.IsSqlite() &&
+        !context.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('Decks')").AsEnumerable().Contains("DeckListUrl"))
+    {
+        context.Database.ExecuteSqlRaw("ALTER TABLE Decks ADD COLUMN DeckListUrl TEXT NULL");
+    }
+
     // Drops the retired Games.Notes column, which would otherwise reject inserts as NOT NULL.
     if (context.Database.IsSqlite() &&
         context.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('Games')").AsEnumerable().Contains("Notes"))
