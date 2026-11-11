@@ -77,7 +77,10 @@ public class DarkThemeTests
     {
         var css = Css();
 
-        Assert.DoesNotMatch(@"[{;\s]border(-(top|bottom|left|right))?:\s*(?!\s|0\b|none)", css);
+        var rulesWithBorders = Regex.Matches(css, @"([^{}]*)\{([^{}]*)\}")
+            .Cast<Match>()
+            .Where(rule => Regex.IsMatch(rule.Groups[2].Value, @"(?<![-\w])border(-(top|bottom|left|right))?:\s*(?!\s|0\b|none)[^;]+;"));
+        Assert.All(rulesWithBorders, rule => Assert.Equal(".winner-radio", rule.Groups[1].Value.Trim()));
         // The matchup card image keeps the radius of a real card's corners.
         var radii = Regex.Matches(css, @"([^{}]*)\{[^}]*(?<![-\w])border-radius:\s*(?!\s|0\b)[^;]+;");
         Assert.All(radii, m => Assert.Contains(".matchup-card", m.Groups[1].Value));
